@@ -33,19 +33,20 @@ int main(int argc, char const *argv[]) {
     Mat gradY = gradX.t();
 
     Mat tempX(image.rows,image.cols, CV_32FC1,Scalar(0));
+    Mat tempY(image.rows,image.cols, CV_32FC1,Scalar(0));
     Mat resultX(image.rows,image.cols, CV_8UC1,Scalar(0));
-
-
+    Mat resultY(image.rows,image.cols, CV_8UC1,Scalar(0));
 
     for(int y = 1; y < image.rows - 1; y++){
         for(int x = 1; x < image.cols - 1; x++){
-            float new_point = convolution(gray_image,gradX,y,x);
-            tempX.at<float>(y,x) = new_point;
-
+            tempX.at<float>(y,x) = convolution(gray_image,gradX,y,x);
+            tempY.at<float>(y,x) = convolution(gray_image,gradY,y,x);
         }
     }
     normalize(tempX,resultX,0,255,NORM_MINMAX);
+    normalize(tempY,resultY,0,255,NORM_MINMAX);
     imwrite("grad_x.jpg",resultX);
+    imwrite("grad_y.jpg",resultY);
     return 0;
 }
 
