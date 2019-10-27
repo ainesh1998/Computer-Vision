@@ -7,6 +7,7 @@
 using namespace cv;
 using namespace std;
 
+
 float convolution(Mat &img,Mat &kernel,int y, int x){
     int val = 0;
     for(int a = -1; a <= 1; a++){
