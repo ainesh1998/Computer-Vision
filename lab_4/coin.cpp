@@ -34,19 +34,32 @@ int main(int argc, char const *argv[]) {
 
     Mat tempX(image.rows,image.cols, CV_32FC1,Scalar(0));
     Mat tempY(image.rows,image.cols, CV_32FC1,Scalar(0));
+    Mat tempMag(image.rows,image.cols, CV_32FC1,Scalar(0));
+    Mat tempDir(image.rows,image.cols, CV_32FC1,Scalar(0));
+
     Mat resultX(image.rows,image.cols, CV_8UC1,Scalar(0));
     Mat resultY(image.rows,image.cols, CV_8UC1,Scalar(0));
+    Mat resultMag(image.rows,image.cols, CV_8UC1,Scalar(0));
+    Mat resultDir(image.rows,image.cols, CV_8UC1,Scalar(0));
 
     for(int y = 1; y < image.rows - 1; y++){
         for(int x = 1; x < image.cols - 1; x++){
-            tempX.at<float>(y,x) = convolution(gray_image,gradX,y,x);
-            tempY.at<float>(y,x) = convolution(gray_image,gradY,y,x);
+            float dx = convolution(gray_image,gradX,y,x);
+            float dy = convolution(gray_image,gradY,y,x);
+            tempX.at<float>(y,x) = dx;
+            tempY.at<float>(y,x) = dy;
+            tempMag.at<float>(y,x) = sqrt(dx * dx + dy * dy);
+            tempDir.at<float>(y,x) = atan(dy/dx);
         }
     }
     normalize(tempX,resultX,0,255,NORM_MINMAX);
     normalize(tempY,resultY,0,255,NORM_MINMAX);
+    normalize(tempMag,resultMag,0,255,NORM_MINMAX);
+    normalize(tempDir,resultDir,0,255,NORM_MINMAX);
     imwrite("grad_x.jpg",resultX);
     imwrite("grad_y.jpg",resultY);
+    imwrite("mag.jpg",resultMag);
+    imwrite("dir.jpg",resultDir);
     return 0;
 }
 
