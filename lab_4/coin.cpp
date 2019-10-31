@@ -50,7 +50,7 @@ int main(int argc, char const *argv[]) {
             tempX.at<float>(y,x) = dx;
             tempY.at<float>(y,x) = dy;
             tempMag.at<float>(y,x) = sqrt(dx * dx + dy * dy);
-            tempDir.at<float>(y,x) = atan(dy/dx);
+            tempDir.at<float>(y,x) = atan2(dy, dx);
         }
     }
     normalize(tempX,resultX,0,255,NORM_MINMAX);
@@ -60,7 +60,13 @@ int main(int argc, char const *argv[]) {
     imwrite("grad_x.jpg",resultX);
     imwrite("grad_y.jpg",resultY);
     imwrite("mag.jpg",resultMag);
-    imwrite("dir.jpg",resultDir);
+    imwrite("dir.jpg", resultDir);
+    // Declare what you need
+    cv::FileStorage file("dir.yml", cv::FileStorage::WRITE);
+
+    // Write to file!
+    file << "tempDir" << tempDir;
+
     return 0;
 }
 
