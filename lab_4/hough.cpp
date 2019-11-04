@@ -77,8 +77,7 @@ Mat hough(Mat &thr, Mat &dir, int ***hough_space, int centreX, int centreY, int 
         for(int x = 0; x < thr.cols; x++){
             if(thr.at<uchar>(y,x) == 255){
                 //hough voting
-                for(int r = 0; r < radius/2; r++) {
-                    int neg_r = r + radius/2;
+                for(int r = 0; r < radius; r++) {
                     int x_0_pos = x + (r + MIN_RADIUS) * cos(dir.at<float>(y,x)); // adding min radius to keep it between the valid range
                     int y_0_pos = y + (r + MIN_RADIUS) * sin(dir.at<float>(y,x));
 
@@ -91,7 +90,7 @@ Mat hough(Mat &thr, Mat &dir, int ***hough_space, int centreX, int centreY, int 
                     }
 
                     if (x_0_neg >= 0 &&  x_0_neg < thr.cols && y_0_neg >= 0 && y_0_neg < thr.rows){
-                        hough_space[x_0_neg][y_0_neg][neg_r]++;
+                        hough_space[x_0_neg][y_0_neg][r]++;
                     }
                 }
             }
@@ -129,7 +128,7 @@ int main(int argc, char const *argv[]) {
     Mat mag = imread("mag.jpg",0);
     Mat thr = threshold(mag, THRESHOLD);
 
-    int centreX = thr.cols, centreY = thr.rows, radius = 2*(MAX_RADIUS - MIN_RADIUS);
+    int centreX = thr.cols, centreY = thr.rows, radius = (MAX_RADIUS - MIN_RADIUS);
     int ***hough_space;
     hough_space = malloc3dArray(centreX, centreY, radius);
 
