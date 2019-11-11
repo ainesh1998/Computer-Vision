@@ -38,14 +38,12 @@ int main( int argc, const char** argv )
 	// 3. Detect Faces and Display Result
 	detectAndDisplay( frame );
 
-	int values[][4] = {{69,134,58,76},{538,125,70,85},{374,108,52,86}};
+	int values[][4] = {{329,79,52,60}};
 	int length = sizeof(values)/sizeof(values[0]);
 
 	drawTruth(frame,values,length);
 	// 4. Save Result Image
 	imwrite( "detected.jpg", frame );
-
-
 	return 0;
 }
 
@@ -69,7 +67,7 @@ void detectAndDisplay( Mat frame )
 	for( int i = 0; i < faces.size(); i++ )
 	{
 		rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
-		// printf("{%d,%d,%d,%d}\n",faces[i].x,faces[i].y,faces[i].width,faces[i].height );
+		printf("{%d,%d,%d,%d}\n",faces[i].x,faces[i].y,faces[i].width,faces[i].height );
 	}
 }
 void drawTruth(Mat frame,int values[][4],int length){
