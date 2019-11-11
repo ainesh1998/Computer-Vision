@@ -13,12 +13,13 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <stdio.h>
-
+#
 using namespace std;
 using namespace cv;
 
 /** Function Headers */
 void detectAndDisplay( Mat frame );
+void drawTruth(Mat frame,int values[][4],int length);
 
 /** Global variables */
 String cascade_name = "frontalface.xml";
@@ -37,8 +38,13 @@ int main( int argc, const char** argv )
 	// 3. Detect Faces and Display Result
 	detectAndDisplay( frame );
 
+	int values[][4] = {{69,134,58,76},{538,125,70,85},{374,108,52,86}};
+	int length = sizeof(values)/sizeof(values[0]);
+
+	drawTruth(frame,values,length);
 	// 4. Save Result Image
 	imwrite( "detected.jpg", frame );
+
 
 	return 0;
 }
@@ -63,13 +69,15 @@ void detectAndDisplay( Mat frame )
 	for( int i = 0; i < faces.size(); i++ )
 	{
 		rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
-		printf("{%d,%d,%d,%d}\n",faces[i].x,faces[i].y,faces[i].width,faces[i].height );
-		// ground_vals.add(make_tuple(faces[i].x,faces[i].y,faces[i].width,faces[i].height));
+		// printf("{%d,%d,%d,%d}\n",faces[i].x,faces[i].y,faces[i].width,faces[i].height );
 	}
-	int x = 374;
-	int y = 108;
-	int width = 52;
-	int height = 86;
-	rectangle(frame,Point(x,y) ,Point(x+width,y+height),Scalar( 255, 0, 0), 2);
-
+}
+void drawTruth(Mat frame,int values[][4],int length){
+	for(int i = 0; i < length; i++){
+		int x = values[i][0];
+		int y = values[i][1];
+		int width = values[i][2];
+		int height = values[i][3];
+		rectangle(frame,Point(x,y) ,Point(x+width,y+height),Scalar(0, 0, 255), 2);
+	}
 }
