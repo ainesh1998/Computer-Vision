@@ -58,11 +58,18 @@ void detectAndDisplay( Mat frame )
 
        // 3. Print number of Faces found
 	std::cout << faces.size() << std::endl;
-
+	// std::vector<tuple<int,int,int,int>> ground_vals;
        // 4. Draw box around faces found
 	for( int i = 0; i < faces.size(); i++ )
 	{
 		rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
+		printf("{%d,%d,%d,%d}\n",faces[i].x,faces[i].y,faces[i].width,faces[i].height );
+		// ground_vals.add(make_tuple(faces[i].x,faces[i].y,faces[i].width,faces[i].height));
 	}
+	int x = 374;
+	int y = 108;
+	int width = 52;
+	int height = 86;
+	rectangle(frame,Point(x,y) ,Point(x+width,y+height),Scalar( 255, 0, 0), 2);
 
 }
