@@ -38,7 +38,7 @@ int main( int argc, const char** argv )
 	// 3. Detect Faces and Display Result
 	detectAndDisplay( frame );
 
-	int values[][4] = {{329,79,52,60}};
+	int values[][4] = {{66,145,60,60},{54,248,60,69},{197,212,50,70},{256,168,49,55},{295,237,50,69},{378,192,59,58},{432,238,50,70},{516,179,47,63},{565,246,47,69},{646,185,53,60},{683,245,51,66}};
 	int length = sizeof(values)/sizeof(values[0]);
 
 	drawTruth(frame,values,length);
