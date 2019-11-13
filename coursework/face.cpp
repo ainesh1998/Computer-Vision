@@ -13,13 +13,15 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <stdio.h>
-#
+#define IOU_THRESHOLD 0.5
 using namespace std;
 using namespace cv;
 
 /** Function Headers */
-void detectAndDisplay( Mat frame );
+vector<Rect> detectAndDisplay( Mat frame );
 void drawTruth(Mat frame,int values[][4],int length);
+double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_length);
+double intersectionOverUnion(Rect prediction,int truth_value[4]);
 
 /** Global variables */
 String cascade_name = "frontalface.xml";
@@ -36,19 +38,21 @@ int main( int argc, const char** argv )
 	if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
 
 	// 3. Detect Faces and Display Result
-	detectAndDisplay( frame );
+	vector<Rect> predictions;
+	predictions = detectAndDisplay( frame );
 
-	int values[][4] = {{66,145,60,60},{54,248,60,69},{197,212,50,70},{256,168,49,55},{295,237,50,69},{378,192,59,58},{432,238,50,70},{516,179,47,63},{565,246,47,69},{646,185,53,60},{683,245,51,66}};
-	int length = sizeof(values)/sizeof(values[0]);
-
-	drawTruth(frame,values,length);
+	int ground_truth_vals[][4] = {{345,103,140,160}};
+	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
+	drawTruth(frame,ground_truth_vals,length);
+	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
+	printf("true pos rate = %f \n",tpr );
 	// 4. Save Result Image
 	imwrite( "detected.jpg", frame );
 	return 0;
 }
 
 /** @function detectAndDisplay */
-void detectAndDisplay( Mat frame )
+vector<Rect> detectAndDisplay( Mat frame )
 {
 	std::vector<Rect> faces;
 	Mat frame_gray;
@@ -62,13 +66,13 @@ void detectAndDisplay( Mat frame )
 
        // 3. Print number of Faces found
 	std::cout << faces.size() << std::endl;
-	// std::vector<tuple<int,int,int,int>> ground_vals;
        // 4. Draw box around faces found
 	for( int i = 0; i < faces.size(); i++ )
 	{
 		rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
 		printf("{%d,%d,%d,%d}\n",faces[i].x,faces[i].y,faces[i].width,faces[i].height );
 	}
+	return faces;
 }
 void drawTruth(Mat frame,int values[][4],int length){
 	for(int i = 0; i < length; i++){
@@ -78,4 +82,37 @@ void drawTruth(Mat frame,int values[][4],int length){
 		int height = values[i][3];
 		rectangle(frame,Point(x,y) ,Point(x+width,y+height),Scalar(0, 0, 255), 2);
 	}
+}
+//given predictions and truth values calculate the true positive rate (no of correct faces/no of valid faces)
+double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_length){
+	int detected;
+	double iou_scores[predictions.size() * truth_length];
+	for(int i = 0; i < predictions.size();i++){
+		for(int j = 0; j < truth_length; j++){
+			//compare each prediction with every truth value
+			//if they don't overlap IOU = 0
+			double iou = intersectionOverUnion(predictions[i],truth_values[i]);
+			iou_scores[truth_length * i + j] = iou;
+		}
+	}
+	//calculate no of detected faces
+	for(int i = 0; i < predictions.size() * truth_length; i++){
+		if(iou_scores[i] > IOU_THRESHOLD) detected++;
+	}
+	return (double)detected/(double)predictions.size();
+}
+//Compute the intersection over union between  prediction and truth value boxes
+double intersectionOverUnion(Rect prediction,int truth_value[4]){
+	//determine coordinates of intersection rectangle
+	int x0 = max(prediction.x,truth_value[0]);
+	int y0 = max(prediction.y,truth_value[1]);
+	int x1 = min(prediction.x + prediction.width,truth_value[0] + truth_value[2]);
+	int y1 = min(prediction.y+ prediction.height,truth_value[1]+ truth_value[3]);
+	//find area of intersection rectangle
+	//0 is in case there's no intersect
+	double intersect_area = max(0,(x1 - x0)) * max(0,(y1 - y0));
+	double pred_area = prediction.width * prediction.height;
+	double truth_area = truth_value[2] * truth_value[3];
+	double iou = intersect_area/(pred_area + truth_area - intersect_area);
+	return iou;
 }
