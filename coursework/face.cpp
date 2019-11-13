@@ -41,7 +41,7 @@ int main( int argc, const char** argv )
 	vector<Rect> predictions;
 	predictions = detectAndDisplay( frame );
 
-	int ground_truth_vals[][4] = {{345,103,140,160}};
+	int ground_truth_vals[][4] = {{69,134,58,76},{538,125,70,85},{374,108,52,86}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
@@ -70,7 +70,7 @@ vector<Rect> detectAndDisplay( Mat frame )
 	for( int i = 0; i < faces.size(); i++ )
 	{
 		rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
-		printf("{%d,%d,%d,%d}\n",faces[i].x,faces[i].y,faces[i].width,faces[i].height );
+		// printf("{%d,%d,%d,%d}\n",faces[i].x,faces[i].y,faces[i].width,faces[i].height );
 	}
 	return faces;
 }
@@ -91,7 +91,7 @@ double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_le
 		for(int j = 0; j < truth_length; j++){
 			//compare each prediction with every truth value
 			//if they don't overlap IOU = 0
-			double iou = intersectionOverUnion(predictions[i],truth_values[i]);
+			double iou = intersectionOverUnion(predictions[i],truth_values[j]);
 			iou_scores[truth_length * i + j] = iou;
 		}
 	}
@@ -99,7 +99,7 @@ double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_le
 	for(int i = 0; i < predictions.size() * truth_length; i++){
 		if(iou_scores[i] > IOU_THRESHOLD) detected++;
 	}
-	return (double)detected/(double)predictions.size();
+	return (double)detected/(double)truth_length;
 }
 //Compute the intersection over union between  prediction and truth value boxes
 double intersectionOverUnion(Rect prediction,int truth_value[4]){
@@ -114,5 +114,6 @@ double intersectionOverUnion(Rect prediction,int truth_value[4]){
 	double pred_area = prediction.width * prediction.height;
 	double truth_area = truth_value[2] * truth_value[3];
 	double iou = intersect_area/(pred_area + truth_area - intersect_area);
+	// printf("%f\n",iou );
 	return iou;
 }
