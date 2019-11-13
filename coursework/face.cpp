@@ -22,7 +22,7 @@ vector<Rect> detectAndDisplay( Mat frame );
 void drawTruth(Mat frame,int values[][4],int length);
 double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_length);
 double intersectionOverUnion(Rect prediction,int truth_value[4]);
-double f1_score(vector<Rect> predictions,int truth_values[][4],int truth_length,double tpr);
+double calc_f1_score(vector<Rect> predictions,int truth_values[][4],int truth_length,double tpr);
 
 /** Global variables */
 String cascade_name = "frontalface.xml";
@@ -47,7 +47,8 @@ int main( int argc, const char** argv )
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
 	printf("true pos rate = %f \n",tpr );
-	
+	double f1_score = calc_f1_score(predictions,ground_truth_vals,length,tpr);
+	printf("f1 score = %f \n",f1_score);
 	// 4. Save Result Image
 	imwrite( "detected.jpg", frame );
 	return 0;
@@ -105,16 +106,17 @@ double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_le
 }
 /*
 Given predictions and truth values, calculates the f1 score
-f1_score = 2 x ((precision * recall)/(precision + recall))
+f1 score = 2 x ((precision * recall)/(precision + recall))
 precision = true positives/(true positives + false positives)
 recall = true positives/(true positives + false negative)
 true positives + false negatives = truth_values
 therefore recall = tpr
 */
-double f1_score(vector<Rect> predictions,int truth_values[][4],int truth_length,double tpr){
+double calc_f1_score(vector<Rect> predictions,int truth_values[][4],int truth_length,double tpr){
 	double recall = tpr;
 	int true_positives = recall * truth_length;
 	double precision = (double)true_positives/(double)predictions.size();
+	printf("precision = %f\n",precision );
 	double f1_score = 2 * (precision * recall)/(precision + recall);
 	return f1_score;
 }
