@@ -42,7 +42,7 @@ int main( int argc, const char** argv )
 	vector<Rect> predictions;
 	predictions = detectAndDisplay( frame );
 
-	int ground_truth_vals[][4] = {{69,134,58,76},{538,125,70,85},{374,108,52,86}};
+	int ground_truth_vals[][4] = {{112,163,145,150}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
@@ -102,6 +102,7 @@ double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_le
 	for(int i = 0; i < predictions.size() * truth_length; i++){
 		if(iou_scores[i] > IOU_THRESHOLD) detected++;
 	}
+	//detected = true positives
 	return (double)detected/(double)truth_length;
 }
 /*
@@ -120,7 +121,7 @@ double calc_f1_score(vector<Rect> predictions,int truth_values[][4],int truth_le
 	double f1_score = 2 * (precision * recall)/(precision + recall);
 	return f1_score;
 }
-//Compute the intersection over union between  prediction and truth value boxes
+//Compute the intersection over union between prediction and truth value boxes
 double intersectionOverUnion(Rect prediction,int truth_value[4]){
 	//determine coordinates of intersection rectangle
 	int x0 = max(prediction.x,truth_value[0]);
