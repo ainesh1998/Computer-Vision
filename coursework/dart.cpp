@@ -13,9 +13,12 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <stdio.h>
+#include "Hough.h"
+
 
 using namespace std;
 using namespace cv;
+// using namespace hough;
 
 /** Function Headers */
 void detectAndDisplay( Mat frame );
@@ -28,6 +31,7 @@ CascadeClassifier cascade;
 /** @function main */
 int main( int argc, const char** argv )
 {
+	Hough hough;
        // 1. Read Input Image
 	Mat frame = imread(argv[1], CV_LOAD_IMAGE_COLOR);
 
@@ -39,7 +43,7 @@ int main( int argc, const char** argv )
 
 	// 4. Save Result Image
 	imwrite( "detected.jpg", frame );
-
+	std::cout << hough.addR(3,6) << '\n';
 	return 0;
 }
 
