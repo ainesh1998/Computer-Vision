@@ -9,8 +9,10 @@
 
 #include "Hough.h"
 #define THRESHOLD 80
+#define THRESHOLD_HOUGH 80
 #define MAX_RADIUS 140
-#define MIN_RADIUS 65
+#define MIN_RADIUS 35
+
 
 int ***malloc3dArray(int centreX, int centreY, int radius){
     int i, j, k;
@@ -76,7 +78,24 @@ Mat threshold(Mat &image, int threshVal) {
     imwrite("thr.jpg",thr);
     return thr;
 }
-void hough_helper(Mat &thr, Mat &dir, int ***hough_space, int centreX, int centreY, int radius) {
+
+Mat thresholdHough(int threshVal) {
+    Mat hough2D = imread("hough_space.jpg", 0);
+    Mat thr(hough2D.rows, hough2D.cols,CV_8UC1,Scalar(0));
+    for(int y = 0; y < hough2D.rows; y++){
+        for(int x = 0; x < hough2D.cols; x++){
+            if(hough2D.at<uchar>(y,x) > threshVal){
+                thr.at<uchar>(y,x) = 255;
+            }
+            else{
+                thr.at<uchar>(y,x) = 0;
+            }
+        }
+    }
+    imwrite("hough_centres.jpg",thr);
+    return thr;
+}
+Mat hough_helper(Mat &thr, Mat &dir, int ***hough_space, int centreX, int centreY, int radius) {
     //zero hough space
     for(int i = 0; i < centreX; i++){
         for(int j = 0; j < centreY; j++){
@@ -117,10 +136,16 @@ void hough_helper(Mat &thr, Mat &dir, int ***hough_space, int centreX, int centr
             }
         }
     }
-
     normalize(hough2D, displayHough, 0, 255, NORM_MINMAX);
     imwrite("hough_space.jpg", displayHough);
-
+    Mat centres = thresholdHough(THRESHOLD_HOUGH);
+    return centres;
+}
+void overlayHough(Mat &original, Mat &hough_centres) {
+    Mat overlay(original.rows, original.cols, CV_32FC1, Scalar(0));
+    overlay = original + hough_centres;
+    normalize(overlay, overlay, 0, 255, NORM_MINMAX);
+    imwrite("hough_detected.jpg",overlay);
 }
 Mat Hough::hough(Mat &image) {
     //get magnitude image and direction image
@@ -144,7 +169,8 @@ Mat Hough::hough(Mat &image) {
     int centreX = thr.cols, centreY = thr.rows, radius = (MAX_RADIUS - MIN_RADIUS);
     int ***hough_space;
     hough_space = malloc3dArray(centreX, centreY, radius);
-    hough_helper(thr,dir_image,hough_space,centreX,centreY,radius);
+    Mat hough_centres = hough_helper(thr,dir_image,hough_space,centreX,centreY,radius);
+    overlayHough(gray_image, hough_centres);
     return t;
 }
 
