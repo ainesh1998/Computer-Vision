@@ -9,7 +9,7 @@
 
 #include "Hough.h"
 #define THRESHOLD 80
-#define THRESHOLD_HOUGH 80
+#define THRESHOLD_HOUGH 140
 #define MAX_RADIUS 140
 #define MIN_RADIUS 35
 
