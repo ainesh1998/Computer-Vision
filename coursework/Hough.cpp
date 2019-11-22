@@ -9,9 +9,10 @@
 
 #include "Hough.h"
 #define THRESHOLD 80
-#define THRESHOLD_HOUGH 140
+#define THRESHOLD_HOUGH 20
 #define MAX_RADIUS 140
 #define MIN_RADIUS 35
+#define HOUGH_STEP 1
 
 
 int ***malloc3dArray(int centreX, int centreY, int radius){
@@ -36,6 +37,7 @@ float convolution(Mat &img,Mat &kernel,int y, int x){
     }
     return val;
 }
+
 /*computes the mag and direction for image and stores in
   mag_image and dir_image respectively
 */
@@ -61,6 +63,7 @@ void sobel(Mat &gray_image, Mat &mag_image, Mat &dir_image){
     imwrite("mag.jpg",displayMag);
     imwrite("dir.jpg", displayDir);
 }
+
 Mat threshold(Mat &image, int threshVal) {
     Mat thr(image.rows,image.cols,CV_8UC1,Scalar(0));
     // std::cout << image.rows << '\n';
@@ -79,7 +82,7 @@ Mat threshold(Mat &image, int threshVal) {
     return thr;
 }
 
-Mat thresholdHough(int threshVal) {
+Mat thresholdHough_old(int threshVal) {
     Mat hough2D = imread("hough_space.jpg", 0);
     Mat thr(hough2D.rows, hough2D.cols,CV_8UC1,Scalar(0));
     for(int y = 0; y < hough2D.rows; y++){
@@ -95,7 +98,8 @@ Mat thresholdHough(int threshVal) {
     imwrite("hough_centres.jpg",thr);
     return thr;
 }
-Mat hough_helper(Mat &thr, Mat &dir, int ***hough_space, int centreX, int centreY, int radius) {
+
+void hough_helper(Mat &thr, Mat &dir, int ***hough_space, int centreX, int centreY, int radius) {
     //zero hough space
     for(int i = 0; i < centreX; i++){
         for(int j = 0; j < centreY; j++){
@@ -104,8 +108,8 @@ Mat hough_helper(Mat &thr, Mat &dir, int ***hough_space, int centreX, int centre
             }
         }
     }
-    for(int y = 0; y < thr.rows; y++){
-        for(int x = 0; x < thr.cols; x++){
+    for(int y = 0; y < thr.rows; y += HOUGH_STEP){
+        for(int x = 0; x < thr.cols; x += HOUGH_STEP){
             if(thr.at<uchar>(y,x) == 255){
                 //hough voting
                 for(int r = 0; r < radius; r++) {
@@ -127,6 +131,8 @@ Mat hough_helper(Mat &thr, Mat &dir, int ***hough_space, int centreX, int centre
             }
         }
     }
+
+    // Create 2D Hough space image
     Mat hough2D(thr.rows, thr.cols, CV_32FC1, Scalar(0));
     Mat displayHough(thr.rows, thr.cols, CV_8UC1, Scalar(0));
     for(int y = 0; y < centreY; y++){
@@ -138,23 +144,43 @@ Mat hough_helper(Mat &thr, Mat &dir, int ***hough_space, int centreX, int centre
     }
     normalize(hough2D, displayHough, 0, 255, NORM_MINMAX);
     imwrite("hough_space.jpg", displayHough);
-    Mat centres = thresholdHough(THRESHOLD_HOUGH);
-    return centres;
+
+
+    // Mat centres = thresholdHough(THRESHOLD_HOUGH);
+    // return centres;
 }
+
 void overlayHough(Mat &original, Mat &hough_centres) {
     Mat overlay(original.rows, original.cols, CV_32FC1, Scalar(0));
     overlay = original + hough_centres;
     normalize(overlay, overlay, 0, 255, NORM_MINMAX);
     imwrite("hough_detected.jpg",overlay);
 }
-Mat Hough::hough(Mat &image) {
+
+
+vector<Rect> detectDartboards(int ***hough_space, int centreX, int centreY, int radius) {
+    vector<Rect> dartboards;
+    for(int i = 0; i < centreX; i++){
+        for(int j = 0; j < centreY; j++){
+            for(int k = 0; k < radius; k++){
+                if (hough_space[i][j][k] > THRESHOLD_HOUGH) {
+                    // Create the rectangle
+                    int x = i - k;
+                    int y = j - k;
+                    int width = k * 2;
+                    dartboards.push_back(Rect(x, y, width, width));
+                }
+            }
+        }
+    }
+    return dartboards;
+}
+
+vector<Rect> Hough::hough(Mat &image) {
     //get magnitude image and direction image
-    Mat t;
-    Mat gray_image;
-    cvtColor(image,gray_image,CV_BGR2GRAY);
     Mat mag_image(image.rows,image.cols, CV_32FC1);
     Mat dir_image(image.rows, image.cols, CV_32FC1);
-    sobel(gray_image,mag_image,dir_image);
+    sobel(image,mag_image,dir_image);
 
     //threshold magnitude image for hough transform
     Mat thr;
@@ -169,11 +195,16 @@ Mat Hough::hough(Mat &image) {
     int centreX = thr.cols, centreY = thr.rows, radius = (MAX_RADIUS - MIN_RADIUS);
     int ***hough_space;
     hough_space = malloc3dArray(centreX, centreY, radius);
-    Mat hough_centres = hough_helper(thr,dir_image,hough_space,centreX,centreY,radius);
-    overlayHough(gray_image, hough_centres);
-    return t;
-}
 
-int Hough::addR(int x, int y){
-    return x + y;
+    // Build the hough space
+    hough_helper(thr,dir_image,hough_space,centreX,centreY,radius);
+
+    // Now we threshold the hough space - to get the most voted-for circles
+    // If the value at a certain point is greater than the threshold,
+    // store the coordinates so we can draw the rectangle
+    vector<Rect> dartboards = detectDartboards(hough_space, centreX, centreY, radius);
+
+    // overlayHough(image, hough_centres);
+
+    return dartboards;
 }
