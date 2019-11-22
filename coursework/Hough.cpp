@@ -9,7 +9,7 @@
 
 #include "Hough.h"
 #define THRESHOLD 80
-#define THRESHOLD_HOUGH 20
+#define THRESHOLD_HOUGH 8
 #define MAX_RADIUS 140
 #define MIN_RADIUS 35
 #define HOUGH_STEP 1
@@ -162,17 +162,22 @@ vector<Rect> detectDartboards(int ***hough_space, int centreX, int centreY, int 
     vector<Rect> dartboards;
     for(int i = 0; i < centreX; i++){
         for(int j = 0; j < centreY; j++){
-            for(int k = 0; k < radius; k++){
-                if (hough_space[i][j][k] > THRESHOLD_HOUGH) {
+            for(int k = radius/2; k < radius; k++){
+                int actualRadius = k + MIN_RADIUS;
+
+                // The circle is considered if it has enough votes, but also if the circle with the same centre but half the radius
+                // has enough votes
+                if (hough_space[i][j][k] > THRESHOLD_HOUGH && hough_space[i][j][actualRadius/2 - MIN_RADIUS] > THRESHOLD_HOUGH) {
                     // Create the rectangle
-                    int x = i - k;
-                    int y = j - k;
-                    int width = k * 2;
+                    int x = i - actualRadius;
+                    int y = j - actualRadius;
+                    int width = actualRadius * 2;
                     dartboards.push_back(Rect(x, y, width, width));
                 }
             }
         }
     }
+
     return dartboards;
 }
 
