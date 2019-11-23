@@ -41,17 +41,25 @@ int main( int argc, const char** argv )
 	Mat frame = imread(argv[1], CV_LOAD_IMAGE_COLOR);
 	Mat gray_image;
 	cvtColor(frame,gray_image,CV_BGR2GRAY);
-	vector<Rect> dartboards = hough.hough(gray_image);
-	std::cout << dartboards.size() << '\n';
+	vector<Rect> predictions = hough.hough(gray_image);
+	std::cout << predictions.size() << '\n';
 
 	// 2. Load the Strong Classifier in a structure called `Cascade'
 	if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
 
-	// 3. Detect darts and draw Hough rectangles
-	for( int i = 0; i < dartboards.size(); i++ )
+	// 3. Detect darts, Display result and draw Hough rectangles
+	for( int i = 0; i < predictions.size(); i++ )
 	{
-		rectangle(frame, Point(dartboards[i].x, dartboards[i].y), Point(dartboards[i].x + dartboards[i].width, dartboards[i].y + dartboards[i].height), Scalar( 0, 255, 0 ), 2);
+		rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
 	}
+
+	int ground_truth_vals[][4] = {{193,128,201,201}};
+	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
+	drawTruth(frame,ground_truth_vals,length);
+	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
+	printf("true pos rate = %f \n",tpr );
+	double f1_score = calc_f1_score(predictions,ground_truth_vals,length,tpr);
+	printf("f1 score = %f \n",f1_score);
 
 	// 4. Save Result Image
 	imwrite( "detected.jpg", frame );
