@@ -53,7 +53,7 @@ int main( int argc, const char** argv )
 		rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
 	}
 
-	int ground_truth_vals[][4] = {{193,128,201,201}};
+	int ground_truth_vals[][4] = {{250,166,152,154}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);

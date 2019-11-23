@@ -8,11 +8,12 @@
 #include <stdio.h>
 
 #include "Hough.h"
-#define THRESHOLD 80
-#define THRESHOLD_HOUGH 8
-#define MAX_RADIUS 140
-#define MIN_RADIUS 35
-#define HOUGH_STEP 1
+#define THRESHOLD 60
+#define THRESHOLD_HOUGH 5
+#define MAX_RADIUS 150
+#define MIN_RADIUS 15
+#define GROUP_THRESHOLD 2
+#define GROUP_EPS 0.5
 
 
 int ***malloc3dArray(int centreX, int centreY, int radius){
@@ -108,8 +109,8 @@ void hough_helper(Mat &thr, Mat &dir, int ***hough_space, int centreX, int centr
             }
         }
     }
-    for(int y = 0; y < thr.rows; y += HOUGH_STEP){
-        for(int x = 0; x < thr.cols; x += HOUGH_STEP){
+    for(int y = 0; y < thr.rows; y++){
+        for(int x = 0; x < thr.cols; x++){
             if(thr.at<uchar>(y,x) == 255){
                 //hough voting
                 for(int r = 0; r < radius; r++) {
@@ -160,23 +161,54 @@ void overlayHough(Mat &original, Mat &hough_centres) {
 
 vector<Rect> detectDartboards(int ***hough_space, int centreX, int centreY, int radius) {
     vector<Rect> dartboards;
+    vector<int> voteCount;
+
     for(int i = 0; i < centreX; i++){
         for(int j = 0; j < centreY; j++){
+            // int temp = 0;
+            // int total = 0;
             for(int k = radius/2; k < radius; k++){
                 int actualRadius = k + MIN_RADIUS;
+                int innerRadiusIndex = actualRadius*0.5 - MIN_RADIUS; // The index of the radius of the smaller circle inside the dartboard
 
                 // The circle is considered if it has enough votes, but also if the circle with the same centre but half the radius
                 // has enough votes
-                if (hough_space[i][j][k] > THRESHOLD_HOUGH && hough_space[i][j][actualRadius/2 - MIN_RADIUS] > THRESHOLD_HOUGH) {
+                if (hough_space[i][j][k] > THRESHOLD_HOUGH && hough_space[i][j][innerRadiusIndex] > THRESHOLD_HOUGH) {
                     // Create the rectangle
                     int x = i - actualRadius;
                     int y = j - actualRadius;
                     int width = actualRadius * 2;
-                    dartboards.push_back(Rect(x, y, width, width));
+                    Rect rectangle = Rect(x, y, width, width);
+
+                    dartboards.push_back(rectangle);
+                    voteCount.push_back(hough_space[i][j][k]);
                 }
+                // temp += hough_space[i][j][k] * (k + MIN_RADIUS);
+                // total += hough_space[i][j][k];
             }
+            // if (total > 0) {
+            //     // std::cout << temp << '\n';
+            //     // std::cout << total << '\n';
+            //     int actualRadius = temp/total;
+            //     int k = temp/total - MIN_RADIUS;
+            //     int innerRadiusIndex = (temp/total)/2 - MIN_RADIUS;
+            //
+            //     if (hough_space[i][j][k] > THRESHOLD_HOUGH && hough_space[i][j][innerRadiusIndex] > THRESHOLD_HOUGH) {
+            //         // Create the rectangle
+            //             int x = i - actualRadius;
+            //             int y = j - actualRadius;
+            //             int width = actualRadius * 2;
+            //             Rect rectangle = Rect(x, y, width, width);
+            //
+            //             dartboards.push_back(rectangle);
+            //             voteCount.push_back(hough_space[i][j][k]);
+                // }
+            // }
         }
     }
+
+    // Remove overlapping rectangles
+    groupRectangles(dartboards, voteCount, GROUP_THRESHOLD, GROUP_EPS);
 
     return dartboards;
 }
