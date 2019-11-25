@@ -51,11 +51,13 @@ int main( int argc, const char** argv )
 	vector<Rect> dartboards;
 	dartboards = detectAndDisplay( frame );
 	vector<Rect> predictions = violaHough(centres,dartboards);
+	// groupRectangles(predictions, 2, 1.5);
+	std::cout << predictions.size() << std::endl;
 	for( int i = 0; i < predictions.size(); i++ )
 	{
 		rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
 	}
-	int ground_truth_vals[][4] = {{193,128,201,201}};
+	int ground_truth_vals[][4] = {{89,101,101,116},{583,126,60,88},{915,149,38,66}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
@@ -83,7 +85,7 @@ vector<Rect> detectAndDisplay( Mat frame )
 	cascade.detectMultiScale( frame_gray, faces, 1.1, 1, 0|CV_HAAR_SCALE_IMAGE, Size(50, 50), Size(500,500) );
 
        // 3. Print number of Faces found
-	std::cout << faces.size() << std::endl;
+	// std::cout << faces.size() << std::endl;
 
        // 4. Draw box around faces found
 	for( int i = 0; i < faces.size(); i++ )
@@ -97,8 +99,8 @@ vector<Rect> violaHough(Mat centres, vector<Rect> dartboards){
 	vector<Rect> predictions;
 	for(int i = 0; i < dartboards.size(); i++){
 		bool found = false;
-		for(int y = dartboards[i].y; y <= dartboards[i].y + dartboards[i].height; y++){
-			for(int x = dartboards[i].x; x < dartboards[i].x + dartboards[i].width; x++){
+		for(int y = dartboards[i].y +0.45 * dartboards[i].height; y <= dartboards[i].y + 0.55* dartboards[i].height; y++){
+			for(int x = dartboards[i].x + 0.45 * dartboards[i].width; x < dartboards[i].x + 0.55*dartboards[i].width; x++){
 				if(!found){
 					if(centres.at<uchar>(y,x) == 255){
 						predictions.push_back(dartboards[i]);

@@ -11,6 +11,7 @@ using namespace cv;
 class Hough{
 public:
     Mat hough(Mat &image);
+    void line_detect(Mat &image);
 };
 
 #endif

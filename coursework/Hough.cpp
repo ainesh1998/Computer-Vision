@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 #include "Hough.h"
-#define THRESHOLD 60
+#define THRESHOLD 80
 #define THRESHOLD_HOUGH_VOTES 5
 #define THRESHOLD_HOUGH_CENTRES 80
 #define MAX_RADIUS 150
@@ -274,38 +274,6 @@ vector<Rect> detectDartboards1(int ***hough_space, int centreX, int centreY, int
     return dartboards;
 }
 
-// I can try thresholding the centers (like before), get the mean of the remaining centers (weighted
-// with total votes), maybe mean of radii too?? and display that
-vector<Rect> detectDartboards2(int ***hough_space, int centreX, int centreY, int radius) {
-//     vector<Rect> dartboards;
-//     vector<int> voteCount;
-//
-//     Mat thresholded = thresholdHoughCentres(THRESHOLD_HOUGH_CENTRES);
-//     int avgX = 0;
-//     int avgY = 0;
-//     int totalVotes;
-//
-//     for(int i = 0; i < centreX; i++){
-//         for(int j = 0; j < centreY; j++){
-//             for(int k = radius/2; k < radius; k++){
-//                 if (thresholded.at<uchar>(j, i) == 255) {
-//                     avgX += hough_space[i][j][k] * i;
-//                     avgY += hough_space[i][j][k] * j;
-//                 }
-//                 totalVotes += hough_space[i][j][k];
-//             }
-//         }
-//     }
-//
-//     avgX = avgX/totalVotes;
-//     avgY = avgY/totalVotes;
-//
-//
-//     // Remove overlapping rectangles
-//     groupRectangles(dartboards, voteCount, GROUP_THRESHOLD, GROUP_EPS);
-//     return dartboards;
-}
-
 Mat Hough::hough(Mat &image1) {
     Mat image;
     cvtColor(image1,image,CV_BGR2GRAY);
@@ -331,4 +299,8 @@ Mat Hough::hough(Mat &image1) {
     Mat hough_centres = hough_builder(thr,dir_image,hough_space,centreX,centreY,radius);
     overlayHough(image, hough_centres);
     return hough_centres;
+}
+
+void line_detect(Mat &image) {
+    
 }
