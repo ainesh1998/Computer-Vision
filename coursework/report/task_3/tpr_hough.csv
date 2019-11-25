@@ -1,0 +1,22 @@
+File name,True Positive Rate
+
+Method 1 - take the hough space and get outer and inner circles with votes
+greater than the threshold, then group rectangles
+IOU = 0.2, THRESHOLD = 60, THRESHOLD_HOUGH = 5
+
+dart0.jpg, 1.00
+dart1.jpg, 1.00
+dart2.jpg, 0.00
+dart3.jpg, 0.00
+dart4.jpg, 1.00
+dart5.jpg, 0.00
+dart6.jpg, 0.00
+dart7.jpg, 1.00
+dart8.jpg, 0.00
+dart9.jpg, 1.00
+dart10.jpg, 0.33
+dart11.jpg, 0.00
+dart12.jpg, 0.00
+dart13.jpg, 1.00
+dart14.jpg, 1.00
+dart15.jpg, 0.00

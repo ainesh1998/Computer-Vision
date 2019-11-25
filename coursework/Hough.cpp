@@ -159,6 +159,9 @@ void overlayHough(Mat &original, Mat &hough_centres) {
 }
 
 
+// I can try thresholding the centers (like before), get the mean of the remaining centers (weighted
+// with total votes), maybe mean of radii too?? and display that
+
 vector<Rect> detectDartboards(int ***hough_space, int centreX, int centreY, int radius) {
     vector<Rect> dartboards;
     vector<int> voteCount;

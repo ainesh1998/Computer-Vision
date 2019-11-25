@@ -31,13 +31,29 @@ double calc_f1_score(vector<Rect> predictions,int truth_values[][4],int truth_le
 /** Global variables */
 String cascade_name = "dartcascade/cascade.xml";
 CascadeClassifier cascade;
-
+int ground_truths[][3][4] = {{{440,9,159,187},{0,0,0,0},{0,0,0,0}},
+							{{193,128,201,201},{0,0,0,0},{0,0,0,0}},
+							{{101,95,91,92},{0,0,0,0},{0,0,0,0}},
+							{{323,147,68,74},{0,0,0,0},{0,0,0,0}},
+							{{179,90,205,207},{0,0,0,0},{0,0,0,0}},
+							{{430,137,113,116},{0,0,0,0},{0,0,0,0}},
+							{{210,115,65,66},{0,0,0,0},{0,0,0,0}},
+							{{250,166,152,154},{0,0,0,0},{0,0,0,0}},
+							{{64,249,66,94},{840,215,121,126},{0,0,0,0}},
+							{{200,45,238,238},{0,0,0,0},{0,0,0,0}},
+							{{89,101,101,116},{583,126,60,88},{915,149,38,66}},
+							{{174,104,60,66},{0,0,0,0},{0,0,0,0}},
+							{{155,77,63,138},{0,0,0,0},{0,0,0,0}},
+							{{273,119,132,134},{0,0,0,0},{0,0,0,0}},
+							{{120,100,126,128},{987,94,125,127},{0,0,0,0}},
+							{{152,53,133,145},{0,0,0,0},{0,0,0,0}}};
 
 /** @function main */
 int main( int argc, const char** argv )
 {
 	Hough hough;
     // 1. Read Input Image
+
 	Mat frame = imread(argv[1], CV_LOAD_IMAGE_COLOR);
 	Mat gray_image;
 	cvtColor(frame,gray_image,CV_BGR2GRAY);
@@ -53,7 +69,8 @@ int main( int argc, const char** argv )
 		rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
 	}
 
-	int ground_truth_vals[][4] = {{250,166,152,154}};
+
+	int ground_truth_vals[][4] = {{152,53,133,145}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
