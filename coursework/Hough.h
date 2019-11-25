@@ -10,7 +10,7 @@ using namespace cv;
 
 class Hough{
 public:
-    vector<Rect> hough(Mat &image);
+    Mat hough(Mat &image);
 };
 
 #endif

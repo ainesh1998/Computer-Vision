@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include "Hough.h"
 
-#define IOU_THRESHOLD 0.2
+#define IOU_THRESHOLD 0.5
 
 using namespace std;
 using namespace cv;
@@ -46,7 +46,7 @@ int main( int argc, const char** argv )
 	vector<Rect> predictions;
 	predictions = detectAndDisplay( frame );
 
-	int ground_truth_vals[][4] = {{152,53,133,145}};
+	int ground_truth_vals[][4] = {{193,128,201,201}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
@@ -72,7 +72,7 @@ vector<Rect> detectAndDisplay( Mat frame )
 	equalizeHist( frame_gray, frame_gray );
 
 	// 2. Perform Viola-Jones Object Detection
-	cascade.detectMultiScale( frame_gray, faces, 1.1, 10, 0|CV_HAAR_SCALE_IMAGE, Size(50, 50), Size(500,500) );
+	cascade.detectMultiScale( frame_gray, faces, 1.1, 1, 0|CV_HAAR_SCALE_IMAGE, Size(50, 50), Size(500,500) );
 
        // 3. Print number of Faces found
 	std::cout << faces.size() << std::endl;
