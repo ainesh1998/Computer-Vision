@@ -42,33 +42,32 @@ int main( int argc, const char** argv )
     // 1. Read Input Image
 	Mat frame = imread(argv[1], CV_LOAD_IMAGE_COLOR);
 
-	Mat centres = h.circle_detect(frame);
+	// Mat centres = h.circle_detect(frame);
 	h.line_detect(frame);
 
 	// 2. Load the Strong Classifier in a structure called `Cascade'
 	if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
 
 	// 3. Detect Faces and Display Result
-	vector<Rect> dartboards;
-	dartboards = detectAndDisplay( frame );
-	vector<Rect> predictions = violaHough(centres,dartboards);
-	// groupRectangles(predictions, 2, 1.5);
-	std::cout << predictions.size() << std::endl;
-	for( int i = 0; i < predictions.size(); i++ )
-	{
-		rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
-	}
-	int ground_truth_vals[][4] = {{89,101,101,116},{583,126,60,88},{915,149,38,66}};
-	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
-	drawTruth(frame,ground_truth_vals,length);
-	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
-	printf("true pos rate = %f \n",tpr );
-	double f1_score = calc_f1_score(predictions,ground_truth_vals,length,tpr);
-	printf("f1 score = %f \n",f1_score);
-	// 4. Save Result Image
-	imwrite( "detected.jpg", frame );
+	// vector<Rect> dartboards;
+	// dartboards = detectAndDisplay( frame );
+	// vector<Rect> predictions = violaHough(centres,dartboards);
+	// // groupRectangles(predictions, 2, 1.5);
+	// std::cout << predictions.size() << std::endl;
+	// for( int i = 0; i < predictions.size(); i++ )
+	// {
+	// 	rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
+	// }
+	// int ground_truth_vals[][4] = {{193,128,201,201}};
+	// int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
+	// drawTruth(frame,ground_truth_vals,length);
+	// double tpr = true_pos_rate(predictions,ground_truth_vals,length);
+	// printf("true pos rate = %f \n",tpr );
+	// double f1_score = calc_f1_score(predictions,ground_truth_vals,length,tpr);
+	// printf("f1 score = %f \n",f1_score);
+	// // 4. Save Result Image
+	// imwrite( "detected.jpg", frame );
 
-	// std::cout << hough.addR(3,6) << '\n';
 	return 0;
 }
 
