@@ -6,16 +6,31 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <stdio.h>
+#include <math.h>
 
 #include "Hough.h"
-#define THRESHOLD 80
-#define THRESHOLD_HOUGH_VOTES 5
+#define THRESHOLD_CIRCLES 80
+#define THRESHOLD_LINES 80
 #define THRESHOLD_HOUGH_CENTRES 80
 #define MAX_RADIUS 150
 #define MIN_RADIUS 15
-#define GROUP_THRESHOLD 2
-#define GROUP_EPS 0.5
+#define MIN_THETA -180
+#define MAX_THETA 180
 
+
+// #define THRESHOLD_HOUGH_VOTES 5
+// #define GROUP_THRESHOLD 2
+// #define GROUP_EPS 0.5
+int **malloc2dArray(int rho, int theta){
+    int i, j;
+    int **array = (int **) malloc(rho * sizeof(int *));
+
+    for (i = 0; i < rho; i++) {
+        array[i] = (int *) malloc(theta * sizeof(int ));
+
+    }
+    return array;
+}
 
 int ***malloc3dArray(int centreX, int centreY, int radius){
     int i, j, k;
@@ -118,7 +133,7 @@ Mat thresholdHoughCentres(int threshVal) {
     return thr;
 }
 
-Mat hough_builder(Mat &thr, Mat &dir, int ***hough_space, int centreX, int centreY, int radius) {
+Mat hough_builder_circles(Mat &thr, Mat &dir, int ***hough_space, int centreX, int centreY, int radius) {
     //zero hough space
     for(int i = 0; i < centreX; i++){
         for(int j = 0; j < centreY; j++){
@@ -164,6 +179,39 @@ Mat hough_builder(Mat &thr, Mat &dir, int ***hough_space, int centreX, int centr
     normalize(hough2D, displayHough, 0, 255, NORM_MINMAX);
     imwrite("hough_space.jpg", displayHough);
     return thresholdHoughCentres(THRESHOLD_HOUGH_CENTRES);
+}
+
+void hough_builder_lines(Mat &thr, Mat &dir, int **hough_space, int rho, int theta) {
+    //zero hough space
+    for(int i = 0; i < rho; i++){
+        for(int j = 0; j < theta; j++){
+            hough_space[i][j];
+        }
+    }
+    for(int y = 0; y < thr.rows; y++){
+        for(int x = 0; x < thr.cols; x++){
+            if(thr.at<uchar>(y,x) == 255){
+                //hough voting
+                float actual_grad = dir.at<float>(y,x);
+                int degreeGradIndex = (actual_grad*180)/M_PI + MIN_THETA;
+                int rho = x * cos(actual_grad) + y * sin(actual_grad);
+
+                if (rho >= 0) hough_space[rho][degreeGradIndex]++;
+            }
+        }
+    }
+
+    // Create 2D Hough space image
+    Mat hough2D(thr.rows, thr.cols, CV_32FC1, Scalar(0));
+    Mat displayHough(thr.rows, thr.cols, CV_8UC1, Scalar(0));
+    for (int i = 0; i < rho; i++) {
+        for (int j = 0; j < theta; j++) {
+            hough2D.at<float>(i,j) = hough_space[i][j];
+        }
+    }
+    normalize(hough2D, displayHough, 0, 255, NORM_MINMAX);
+    imwrite("hough_space_lines.jpg", displayHough);
+    // return thresholdHoughCentres(THRESHOLD_HOUGH_CENTRES);
 }
 
 void hough_builder_ellipse(Mat &thr, Mat &dir, int ****hough_space, int centreX, int centreY, int radius) {
@@ -229,52 +277,52 @@ void overlayHough(Mat &original, Mat &hough_centres) {
 // Method 1 - take the hough space and get outer and inner circles with votes
 // greater than the threshold, then group rectangles
 vector<Rect> detectDartboards1(int ***hough_space, int centreX, int centreY, int radius) {
-    vector<Rect> dartboards;
-    vector<int> voteCount;
-    bool done = false;
-    bool temp = false;
-
-    for(int i = 0; i < centreX; i++){
-        for(int j = 0; j < centreY; j++){
-            for(int k = 0; k < radius; k++){
-                int actualRadius = (k + MIN_RADIUS);
-
-                if (hough_space[i][j][k] > THRESHOLD_HOUGH_VOTES) {
-                    for (float a = 0.62; a <= 0.63; a += 0.01) {
-                        int innerRadiusIndex = (int) actualRadius*a - MIN_RADIUS; // The index of the radius of the smaller circle inside the dartboard
-                        // std::cout << innerRadiusIndex << '\n';
-
-                        // The circle is considered if it has enough votes, but also if the circle with the same centre but half the radius
-                        // has enough votes
-                        if (hough_space[i][j][innerRadiusIndex] > THRESHOLD_HOUGH_VOTES && k > MIN_RADIUS/a) {
-                            // Create the rectangle
-                            int x = i - actualRadius;
-                            int y = j - actualRadius;
-                            int width = actualRadius * 2;
-                            Rect rectangle = Rect(x, y, width, width);
-
-                            dartboards.push_back(rectangle);
-                            voteCount.push_back(hough_space[i][j][k]);
-                            if (!done) {
-                                std::cout << "test" << '\n';
-                                temp = true;
-                            }
-                            break;
-                        }
-
-                    }
-                }
-                if (temp) done = true;
-            }
-        }
-    }
-
-    // Remove overlapping rectangles
-    groupRectangles(dartboards, voteCount, GROUP_THRESHOLD, GROUP_EPS);
-    return dartboards;
+    // vector<Rect> dartboards;
+    // vector<int> voteCount;
+    // bool done = false;
+    // bool temp = false;
+    //
+    // for(int i = 0; i < centreX; i++){
+    //     for(int j = 0; j < centreY; j++){
+    //         for(int k = 0; k < radius; k++){
+    //             int actualRadius = (k + MIN_RADIUS);
+    //
+    //             if (hough_space[i][j][k] > THRESHOLD_HOUGH_VOTES) {
+    //                 for (float a = 0.62; a <= 0.63; a += 0.01) {
+    //                     int innerRadiusIndex = (int) actualRadius*a - MIN_RADIUS; // The index of the radius of the smaller circle inside the dartboard
+    //                     // std::cout << innerRadiusIndex << '\n';
+    //
+    //                     // The circle is considered if it has enough votes, but also if the circle with the same centre but half the radius
+    //                     // has enough votes
+    //                     if (hough_space[i][j][innerRadiusIndex] > THRESHOLD_HOUGH_VOTES && k > MIN_RADIUS/a) {
+    //                         // Create the rectangle
+    //                         int x = i - actualRadius;
+    //                         int y = j - actualRadius;
+    //                         int width = actualRadius * 2;
+    //                         Rect rectangle = Rect(x, y, width, width);
+    //
+    //                         dartboards.push_back(rectangle);
+    //                         voteCount.push_back(hough_space[i][j][k]);
+    //                         if (!done) {
+    //                             std::cout << "test" << '\n';
+    //                             temp = true;
+    //                         }
+    //                         break;
+    //                     }
+    //
+    //                 }
+    //             }
+    //             if (temp) done = true;
+    //         }
+    //     }
+    // }
+    //
+    // // Remove overlapping rectangles
+    // groupRectangles(dartboards, voteCount, GROUP_THRESHOLD, GROUP_EPS);
+    // return dartboards;
 }
 
-Mat Hough::hough(Mat &image1) {
+Mat Hough::circle_detect(Mat &image1) {
     Mat image;
     cvtColor(image1,image,CV_BGR2GRAY);
     //get magnitude image and direction image
@@ -285,7 +333,7 @@ Mat Hough::hough(Mat &image1) {
     //threshold magnitude image for hough transform
     Mat thr;
     Mat test_mag = imread("mag.jpg",0);
-    thr = threshold(test_mag,THRESHOLD);
+    thr = threshold(test_mag,THRESHOLD_CIRCLES);
 
     //perform hough transform
     int centreX = thr.cols, centreY = thr.rows, radius = (MAX_RADIUS - MIN_RADIUS);
@@ -296,11 +344,31 @@ Mat Hough::hough(Mat &image1) {
     // hough_space_ellipse = malloc4dArray(centreX, centreY, radius, radius);
 
     // Build the hough space
-    Mat hough_centres = hough_builder(thr,dir_image,hough_space,centreX,centreY,radius);
+    Mat hough_centres = hough_builder_circles(thr,dir_image,hough_space,centreX,centreY,radius);
     overlayHough(image, hough_centres);
     return hough_centres;
 }
 
-void line_detect(Mat &image) {
-    
+void Hough::line_detect(Mat &image1) {
+    Mat image;
+    cvtColor(image1,image,CV_BGR2GRAY);
+    //get magnitude image and direction image
+    Mat mag_image(image.rows,image.cols, CV_32FC1);
+    Mat dir_image(image.rows, image.cols, CV_32FC1);
+    sobel(image,mag_image,dir_image);
+
+    //threshold magnitude image for hough transform
+    Mat thr;
+    Mat test_mag = imread("mag.jpg",0);
+    thr = threshold(test_mag,THRESHOLD_LINES);
+
+    //perform hough transform
+    int rho = image.rows > image.cols ? image.rows : image.cols;
+    int theta = MAX_THETA - MIN_THETA;
+    int **hough_space;
+    hough_space = malloc2dArray(rho,theta);
+
+    // Build the hough space
+    hough_builder_lines(thr,dir_image,hough_space,rho,theta);
+
 }

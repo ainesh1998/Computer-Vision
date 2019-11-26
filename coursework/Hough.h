@@ -10,7 +10,7 @@ using namespace cv;
 
 class Hough{
 public:
-    Mat hough(Mat &image);
+    Mat circle_detect(Mat &image);
     void line_detect(Mat &image);
 };
 
