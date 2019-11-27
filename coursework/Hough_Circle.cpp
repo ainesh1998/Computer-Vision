@@ -81,10 +81,8 @@ Mat HoughCircle::circle_detect(Mat &image1) {
     Mat image;
     cvtColor(image1,image,CV_BGR2GRAY);
     //get magnitude image and direction image
-    Mat mag_image(image.rows,image.cols, CV_32FC1);
-    Mat dir_image(image.rows, image.cols, CV_32FC1);
     HoughHelper h;
-    h.sobel(image,mag_image,dir_image);
+    Mat dir_image = h.sobel(image);
 
     //threshold magnitude image for hough transform
     Mat thr;

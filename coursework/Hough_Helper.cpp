@@ -22,11 +22,14 @@ float convolution(Mat &img,Mat &kernel,int y, int x){
 /*computes the mag and direction for image and stores in
   mag_image and dir_image respectively
 */
-void HoughHelper::sobel(Mat &gray_image, Mat &mag_image, Mat &dir_image){
+Mat HoughHelper::sobel(Mat &gray_image){
     Mat gradX = (Mat_<int>(3,3) << -1,0,1,-2,0,2,-1,0,1);
     Mat gradY = gradX.t();
     Mat gradX_image(gray_image.rows,gray_image.cols, CV_32FC1,Scalar(0));
     Mat gradY_image(gray_image.rows,gray_image.cols, CV_32FC1,Scalar(0));
+    Mat mag_image(gray_image.rows,gray_image.cols, CV_32FC1,Scalar(0));
+    Mat dir_image(gray_image.rows,gray_image.cols, CV_32FC1,Scalar(0));
+
     for(int y = 1; y < gray_image.rows - 1; y++){
         for(int x = 1; x < gray_image.cols - 1; x++){
             float dx = convolution(gray_image,gradX,y,x);
@@ -43,6 +46,8 @@ void HoughHelper::sobel(Mat &gray_image, Mat &mag_image, Mat &dir_image){
     normalize(dir_image,displayDir,0,255,NORM_MINMAX);
     imwrite("mag.jpg",displayMag);
     imwrite("dir.jpg", displayDir);
+
+    return dir_image;
 }
 
 Mat HoughHelper::threshold(string input, string output, int threshVal) {

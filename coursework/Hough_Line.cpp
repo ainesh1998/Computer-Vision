@@ -106,9 +106,7 @@ Mat HoughLine::line_detect(Mat &image1) {
     HoughHelper h;
 
     //get magnitude image and direction image
-    Mat mag_image(image.rows,image.cols, CV_32FC1);
-    Mat dir_image(image.rows, image.cols, CV_32FC1);
-    h.sobel(image,mag_image,dir_image);
+    Mat dir_image = h.sobel(image);
 
     //threshold magnitude image for hough transform
     Mat thr;

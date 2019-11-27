@@ -10,7 +10,7 @@ using namespace cv;
 
 class HoughHelper{
 public:
-     void sobel(Mat &gray_image, Mat &mag_image, Mat &dir_image);
+     Mat sobel(Mat &gray_image);
      Mat threshold(string input, string output, int threshVal);
      void overlayHough(Mat &original, Mat &hough_centres, string name);
 

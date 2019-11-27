@@ -24,7 +24,7 @@ using namespace cv;
 /** Function Headers */
 vector<Rect> detectAndDisplay( Mat frame );
 //combine viola jones predictions with hough space predictions for stronger classifier
-vector<Rect> violaHough(Mat centres, vector<Rect> dartboards);
+vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartboards);
 void drawTruth(Mat frame,int values[][4],int length);
 double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_length);
 double intersectionOverUnion(Rect prediction,int truth_value[4]);
@@ -44,31 +44,31 @@ int main( int argc, const char** argv )
     // 1. Read Input Image
 	Mat frame = imread(argv[1], CV_LOAD_IMAGE_COLOR);
 
-	houghLine.line_detect(frame);
 	Mat centres = houghCircle.circle_detect(frame);
+	Mat line_intersections = houghLine.line_detect(frame);
 
 	// 2. Load the Strong Classifier in a structure called `Cascade'
 	if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
 
 	// 3. Detect Faces and Display Result
-	// vector<Rect> dartboards;
-	// dartboards = detectAndDisplay( frame );
-	// vector<Rect> predictions = violaHough(centres,dartboards);
-	// // groupRectangles(predictions, 2, 1.5);
-	// std::cout << predictions.size() << std::endl;
-	// for( int i = 0; i < predictions.size(); i++ )
-	// {
-	// 	rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
-	// }
-	// int ground_truth_vals[][4] = {{193,128,201,201}};
-	// int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
-	// drawTruth(frame,ground_truth_vals,length);
-	// double tpr = true_pos_rate(predictions,ground_truth_vals,length);
-	// printf("true pos rate = %f \n",tpr );
-	// double f1_score = calc_f1_score(predictions,ground_truth_vals,length,tpr);
-	// printf("f1 score = %f \n",f1_score);
-	// // 4. Save Result Image
-	// imwrite( "detected.jpg", frame );
+	vector<Rect> dartboards;
+	dartboards = detectAndDisplay( frame );
+	vector<Rect> predictions = violaHough(centres,line_intersections,dartboards);
+	// groupRectangles(predictions, 2, 1.5);
+	std::cout << predictions.size() << std::endl;
+	for( int i = 0; i < predictions.size(); i++ )
+	{
+		rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
+	}
+	int ground_truth_vals[][4] = {{440,9,159,187}};
+	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
+	drawTruth(frame,ground_truth_vals,length);
+	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
+	printf("true pos rate = %f \n",tpr );
+	double f1_score = calc_f1_score(predictions,ground_truth_vals,length,tpr);
+	printf("f1 score = %f \n",f1_score);
+	// 4. Save Result Image
+	imwrite( "detected.jpg", frame );
 
 	return 0;
 }
@@ -97,14 +97,14 @@ vector<Rect> detectAndDisplay( Mat frame )
 	return faces;
 }
 
-vector<Rect> violaHough(Mat centres, vector<Rect> dartboards){
+vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartboards){
 	vector<Rect> predictions;
 	for(int i = 0; i < dartboards.size(); i++){
 		bool found = false;
 		for(int y = dartboards[i].y +0.45 * dartboards[i].height; y <= dartboards[i].y + 0.55* dartboards[i].height; y++){
 			for(int x = dartboards[i].x + 0.45 * dartboards[i].width; x < dartboards[i].x + 0.55*dartboards[i].width; x++){
 				if(!found){
-					if(centres.at<uchar>(y,x) == 255){
+					if(centres.at<uchar>(y,x) == 255 && line_intersections.at<uchar>(y,x) == 255){
 						predictions.push_back(dartboards[i]);
 						found = true;
 					}
