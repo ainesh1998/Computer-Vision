@@ -9,16 +9,16 @@
 #include <math.h>
 
 #include "Hough.h"
-#define THRESHOLD_CIRCLES 80
-#define THRESHOLD_HOUGH_CENTRES 80
-#define MAX_RADIUS 150
-#define MIN_RADIUS 15
+#define THRESHOLD_CIRCLES 80 // thresholding the original magnitude image for hough circles
+#define THRESHOLD_HOUGH_CENTRES 80 // thresholding the hough space for hough circles
+#define MAX_RADIUS 150 // maximum radius for circles in the hough circle space
+#define MIN_RADIUS 15 // minimum radius for circles in the hough circle space
 
-#define THRESHOLD_LINES 80
-#define THRESHOLD_LINE_SPACE 80
-#define MIN_THETA -180
-#define MAX_THETA 180
-#define DELTA_THETA 10
+#define THRESHOLD_LINES 80 // thresholding the original magnitude image for hough lines
+#define THRESHOLD_LINE_SPACE 35 // thresholding the hough space for hough lines
+#define MIN_THETA -180 // minimum angle represented in the hough line space
+#define MAX_THETA 180 // maximum angle represented in the hough line space
+#define DELTA_THETA 5 // range we consider for angles for each hough line
 
 
 // #define THRESHOLD_HOUGH_VOTES 5
@@ -207,6 +207,7 @@ Mat hough_builder_circles(Mat &thr, Mat &dir, int ***hough_space, int centreX, i
 
 Mat hough_builder_lines(Mat &thr, Mat &dir, int **hough_space, int rho, int theta) {
     //zero hough space
+    // dir = image of direction of the gradient
     for(int i = 0; i < rho; i++){
         for(int j = 0; j < theta; j++){
             hough_space[i][j] = 0;
@@ -218,12 +219,14 @@ Mat hough_builder_lines(Mat &thr, Mat &dir, int **hough_space, int rho, int thet
                 //hough voting
                 float actual_grad = dir.at<float>(y,x);
                 int degreeGradIndex = (actual_grad*180)/M_PI - MIN_THETA;
-                int rho_val = x * cos(actual_grad) + y * sin(actual_grad);
 
-                if (rho_val >= 0 && rho_val < rho) {
-                    for (int i = degreeGradIndex - DELTA_THETA; i <= degreeGradIndex + DELTA_THETA; i++) {
-                        int correctedGrad = i % theta;
-                        hough_space[rho_val][correctedGrad]++;
+                for (int i = degreeGradIndex-DELTA_THETA; i <= degreeGradIndex+DELTA_THETA; i++) {
+                    int corrected_degree = (i + theta)%theta;
+                    float corrected_rad = (corrected_degree+MIN_THETA)*M_PI/180;
+                    int rho_val = x * cos(corrected_rad) + y * sin(corrected_rad);
+
+                    if (rho_val >= 0 && rho_val < rho) {
+                        hough_space[rho_val][corrected_degree]++;
                     }
                 }
             }
