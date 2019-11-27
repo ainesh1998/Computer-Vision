@@ -10,13 +10,15 @@
 
 #include "Hough.h"
 #define THRESHOLD_CIRCLES 80
-#define THRESHOLD_LINES 35
 #define THRESHOLD_HOUGH_CENTRES 80
-
 #define MAX_RADIUS 150
 #define MIN_RADIUS 15
+
+#define THRESHOLD_LINES 80
+#define THRESHOLD_LINE_SPACE 80
 #define MIN_THETA -180
 #define MAX_THETA 180
+#define DELTA_THETA 10
 
 
 // #define THRESHOLD_HOUGH_VOTES 5
@@ -150,7 +152,6 @@ Mat thresholdHough(string img, int threshVal) {
             }
         }
     }
-    imwrite("output.jpg",thr);
     return thr;
 }
 
@@ -199,7 +200,9 @@ Mat hough_builder_circles(Mat &thr, Mat &dir, int ***hough_space, int centreX, i
     }
     normalize(hough2D, displayHough, 0, 255, NORM_MINMAX);
     imwrite("hough_space.jpg", displayHough);
-    return thresholdHough("hough_space.jpg", THRESHOLD_HOUGH_CENTRES);
+    Mat thresholded = thresholdHough("hough_space.jpg", THRESHOLD_HOUGH_CENTRES);
+    imwrite("hough_centres.jpg",thresholded);
+    return thresholded;
 }
 
 Mat hough_builder_lines(Mat &thr, Mat &dir, int **hough_space, int rho, int theta) {
@@ -218,7 +221,10 @@ Mat hough_builder_lines(Mat &thr, Mat &dir, int **hough_space, int rho, int thet
                 int rho_val = x * cos(actual_grad) + y * sin(actual_grad);
 
                 if (rho_val >= 0 && rho_val < rho) {
-                    hough_space[rho_val][degreeGradIndex]++;
+                    for (int i = degreeGradIndex - DELTA_THETA; i <= degreeGradIndex + DELTA_THETA; i++) {
+                        int correctedGrad = i % theta;
+                        hough_space[rho_val][correctedGrad]++;
+                    }
                 }
             }
         }
@@ -234,7 +240,9 @@ Mat hough_builder_lines(Mat &thr, Mat &dir, int **hough_space, int rho, int thet
     }
     normalize(hough2D, displayHough, 0, 255, NORM_MINMAX);
     imwrite("hough_space_lines.jpg", displayHough);
-    return thresholdHough("hough_space_lines.jpg",THRESHOLD_LINES);
+    Mat thresholded = thresholdHough("hough_space_lines.jpg",THRESHOLD_LINE_SPACE);
+    imwrite("lines_thresholded.jpg",thresholded);
+    return thresholded;
 }
 
 void overlayHough(Mat &original, Mat &hough_centres) {
@@ -315,9 +323,11 @@ Mat Hough::circle_detect(Mat &image1) {
     overlayHough(image, hough_centres);
     return hough_centres;
 }
+
 float eval(int rho,float theta,int x){
     return (rho - x * cos(theta))/sin(theta);
 }
+
 void drawLines(Mat hough_lines, Mat image) {
     Mat line_space(image.rows,image.cols,CV_8UC1,Scalar(0));
     //hough_lines.rows = rho
@@ -347,7 +357,7 @@ void Hough::line_detect(Mat &image1) {
     //threshold magnitude image for hough transform
     Mat thr;
     Mat test_mag = imread("mag1.jpg",0);
-    thr = threshold(test_mag,THRESHOLD_CIRCLES);
+    thr = threshold(test_mag,THRESHOLD_LINES);
 
     //perform hough transform
     int rho = sqrt(image.rows*image.rows + image.cols*image.cols);
