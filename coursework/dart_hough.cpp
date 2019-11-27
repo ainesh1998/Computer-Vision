@@ -16,7 +16,7 @@
 #include "Hough_Circle.h"
 #include "Hough_Line.h"
 
-#define IOU_THRESHOLD 0.5
+#define IOU_THRESHOLD 0.4
 
 using namespace std;
 using namespace cv;
@@ -60,7 +60,7 @@ int main( int argc, const char** argv )
 	{
 		rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
 	}
-	int ground_truth_vals[][4] = {{440,9,159,187}};
+	int ground_truth_vals[][4] = {{152,53,133,145}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);

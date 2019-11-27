@@ -121,5 +121,6 @@ Mat HoughLine::line_detect(Mat &image1) {
     // Build the hough space
     Mat hough_lines = hough_builder_lines(thr,dir_image,hough_space,rho,theta);
     Mat intersections = drawLines(hough_lines,image);
+    h.overlayHough(image, intersections, "lines_detected.jpg");
     return intersections;
 }
