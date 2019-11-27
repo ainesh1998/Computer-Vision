@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "Hough.h"
+#include "Hough_Circle.h"
 #define THRESHOLD_CIRCLES 80 // thresholding the original magnitude image for hough circles
 #define THRESHOLD_HOUGH_CENTRES 80 // thresholding the hough space for hough circles
 #define MAX_RADIUS 150 // maximum radius for circles in the hough circle space
@@ -303,7 +303,7 @@ vector<Rect> detectDartboards1(int ***hough_space, int centreX, int centreY, int
     // return dartboards;
 }
 
-Mat Hough::circle_detect(Mat &image1) {
+Mat HoughCircle::circle_detect(Mat &image1) {
     Mat image;
     cvtColor(image1,image,CV_BGR2GRAY);
     //get magnitude image and direction image
@@ -352,7 +352,7 @@ void drawLines(Mat hough_lines, Mat image) {
     imwrite("line_space.jpg",line_space);
 }
 
-void Hough::line_detect(Mat &image1) {
+void HoughCircle::line_detect(Mat &image1) {
     Mat image;
     cvtColor(image1,image,CV_BGR2GRAY);
 

@@ -13,7 +13,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <stdio.h>
-#include "Hough.h"
+#include "Hough_Circle.h"
 
 #define IOU_THRESHOLD 0.2
 
@@ -38,11 +38,11 @@ CascadeClassifier cascade;
 /** @function main */
 int main( int argc, const char** argv )
 {
-	Hough h;
+	HoughCircle h;
     // 1. Read Input Image
 	Mat frame = imread(argv[1], CV_LOAD_IMAGE_COLOR);
 
-	// Mat centres = h.circle_detect(frame);
+	Mat centres = h.circle_detect(frame);
 	h.line_detect(frame);
 
 	// 2. Load the Strong Classifier in a structure called `Cascade'

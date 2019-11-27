@@ -1,5 +1,5 @@
-#ifndef HOUGH_TRANSFORM
-#define HOUGH_TRANSFORM
+#ifndef HOUGH_CIRCLE_TRANSFORM
+#define HOUGH_CIRCLE_TRANSFORM
 #include "opencv2/objdetect/objdetect.hpp"
 #include "opencv2/opencv.hpp"
 #include "opencv2/core/core.hpp"
@@ -8,7 +8,7 @@
 
 using namespace cv;
 
-class Hough{
+class HoughCircle{
 public:
     Mat circle_detect(Mat &image);
     void line_detect(Mat &image);
