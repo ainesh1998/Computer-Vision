@@ -14,12 +14,12 @@
 #include <iostream>
 #include <stdio.h>
 #include "Hough_Circle.h"
+#include "Hough_Line.h"
 
-#define IOU_THRESHOLD 0.2
+#define IOU_THRESHOLD 0.5
 
 using namespace std;
 using namespace cv;
-// using namespace hough;
 
 /** Function Headers */
 vector<Rect> detectAndDisplay( Mat frame );
@@ -38,12 +38,14 @@ CascadeClassifier cascade;
 /** @function main */
 int main( int argc, const char** argv )
 {
-	HoughCircle h;
+	HoughCircle houghCircle;
+	HoughLine houghLine;
+
     // 1. Read Input Image
 	Mat frame = imread(argv[1], CV_LOAD_IMAGE_COLOR);
 
-	Mat centres = h.circle_detect(frame);
-	h.line_detect(frame);
+	houghLine.line_detect(frame);
+	Mat centres = houghCircle.circle_detect(frame);
 
 	// 2. Load the Strong Classifier in a structure called `Cascade'
 	if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };

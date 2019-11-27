@@ -11,7 +11,6 @@ using namespace cv;
 class HoughCircle{
 public:
     Mat circle_detect(Mat &image);
-    void line_detect(Mat &image);
 };
 
 #endif
