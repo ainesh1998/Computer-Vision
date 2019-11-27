@@ -10,7 +10,7 @@ using namespace cv;
 
 class HoughLine {
 public:
-    void line_detect(Mat &image);
+    Mat line_detect(Mat &image);
 };
 
 #endif

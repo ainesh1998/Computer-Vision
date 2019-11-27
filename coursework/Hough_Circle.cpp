@@ -71,10 +71,9 @@ Mat hough_builder_circles(Mat &thr, Mat &dir, int ***hough_space, int centreX, i
         }
     }
     normalize(hough2D, displayHough, 0, 255, NORM_MINMAX);
-    imwrite("hough_space.jpg", displayHough);
+    imwrite("circle_space.jpg", displayHough);
     HoughHelper h;
-    Mat thresholded = h.thresholdHough("hough_space.jpg", THRESHOLD_HOUGH_CENTRES);
-    imwrite("hough_centres.jpg",thresholded);
+    Mat thresholded = h.threshold("circle_space.jpg","circle_space_thr.jpg",THRESHOLD_HOUGH_CENTRES);
     return thresholded;
 }
 
@@ -89,8 +88,7 @@ Mat HoughCircle::circle_detect(Mat &image1) {
 
     //threshold magnitude image for hough transform
     Mat thr;
-    Mat test_mag = imread("mag.jpg",0);
-    thr = h.threshold(test_mag,THRESHOLD_CIRCLES);
+    thr = h.threshold("mag.jpg","thr_circle.jpg",THRESHOLD_CIRCLES);
 
     //perform hough transform
     int centreX = thr.cols, centreY = thr.rows, radius = (MAX_RADIUS - MIN_RADIUS);
@@ -99,6 +97,6 @@ Mat HoughCircle::circle_detect(Mat &image1) {
 
     // Build the hough space
     Mat hough_centres = hough_builder_circles(thr,dir_image,hough_space,centreX,centreY,radius);
-    h.overlayHough(image, hough_centres);
+    h.overlayHough(image, hough_centres, "circles_detected.jpg");
     return hough_centres;
 }

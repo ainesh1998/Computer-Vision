@@ -45,10 +45,10 @@ void HoughHelper::sobel(Mat &gray_image, Mat &mag_image, Mat &dir_image){
     imwrite("dir.jpg", displayDir);
 }
 
-Mat HoughHelper::threshold(Mat &image, int threshVal) {
+Mat HoughHelper::threshold(string input, string output, int threshVal) {
+    Mat image = imread(input, 0);
     Mat thr(image.rows,image.cols,CV_8UC1,Scalar(0));
-    // std::cout << image.rows << '\n';
-    // std::cout << image.cols << '\n';
+
     for(int y = 0; y < image.rows; y++){
         for(int x = 0; x < image.cols; x++){
             if(image.at<uchar>(y,x) > threshVal){
@@ -59,29 +59,13 @@ Mat HoughHelper::threshold(Mat &image, int threshVal) {
             }
         }
     }
-    imwrite("thr.jpg",thr);
+    imwrite(output,thr);
     return thr;
 }
 
-Mat HoughHelper::thresholdHough(string img, int threshVal) {
-    Mat hough2D = imread(img, 0);
-    Mat thr(hough2D.rows, hough2D.cols,CV_8UC1,Scalar(0));
-    for(int y = 0; y < hough2D.rows; y++){
-        for(int x = 0; x < hough2D.cols; x++){
-            if(hough2D.at<uchar>(y,x) > threshVal){
-                thr.at<uchar>(y,x) = 255;
-            }
-            else{
-                thr.at<uchar>(y,x) = 0;
-            }
-        }
-    }
-    return thr;
-}
-
-void HoughHelper::overlayHough(Mat &original, Mat &hough_centres) {
+void HoughHelper::overlayHough(Mat &original, Mat &hough_centres, string name) {
     Mat overlay(original.rows, original.cols, CV_32FC1, Scalar(0));
     overlay = original + hough_centres;
     normalize(overlay, overlay, 0, 255, NORM_MINMAX);
-    imwrite("hough_detected.jpg",overlay);
+    imwrite(name,overlay);
 }

@@ -12,6 +12,7 @@
 #include "Hough_Helper.h"
 #define THRESHOLD_LINES 80 // thresholding the original magnitude image for hough lines
 #define THRESHOLD_LINE_SPACE 35 // thresholding the hough space for hough lines
+#define THRESHOLD_INTERSECTIONS 100
 #define MIN_THETA -180 // minimum angle represented in the hough line space
 #define MAX_THETA 180 // maximum angle represented in the hough line space
 #define DELTA_THETA 5 // range we consider for angles for each hough line
@@ -65,10 +66,9 @@ Mat hough_builder_lines(Mat &thr, Mat &dir, int **hough_space, int rho, int thet
         }
     }
     normalize(hough2D, displayHough, 0, 255, NORM_MINMAX);
-    imwrite("hough_space_lines.jpg", displayHough);
+    imwrite("line_space.jpg", displayHough);
     HoughHelper h;
-    Mat thresholded = h.thresholdHough("hough_space_lines.jpg",THRESHOLD_LINE_SPACE);
-    imwrite("lines_thresholded.jpg",thresholded);
+    Mat thresholded = h.threshold("line_space.jpg","line_space_thr.jpg",THRESHOLD_LINE_SPACE);
     return thresholded;
 }
 
@@ -76,7 +76,7 @@ float eval(int rho,float theta,int x){
     return (rho - x * cos(theta))/sin(theta);
 }
 
-void drawLines(Mat hough_lines, Mat image) {
+Mat drawLines(Mat hough_lines, Mat image) {
     Mat temp(image.rows,image.cols,CV_32FC1,Scalar(0));
     Mat line_space(image.rows,image.cols,CV_8UC1,Scalar(0));
     //hough_lines.rows = rho
@@ -94,10 +94,13 @@ void drawLines(Mat hough_lines, Mat image) {
         }
     }
     normalize(temp, line_space, 0, 255, NORM_MINMAX);
-    imwrite("line_space.jpg",line_space);
+    imwrite("intersection_space.jpg",line_space);
+    HoughHelper h;
+    Mat thresholded = h.threshold("intersection_space.jpg","intersection_thr.jpg",THRESHOLD_INTERSECTIONS);
+    return thresholded;
 }
 
-void HoughLine::line_detect(Mat &image1) {
+Mat HoughLine::line_detect(Mat &image1) {
     Mat image;
     cvtColor(image1,image,CV_BGR2GRAY);
     HoughHelper h;
@@ -109,8 +112,7 @@ void HoughLine::line_detect(Mat &image1) {
 
     //threshold magnitude image for hough transform
     Mat thr;
-    Mat test_mag = imread("mag1.jpg",0);
-    thr = h.threshold(test_mag,THRESHOLD_LINES);
+    thr = h.threshold("mag.jpg","thr_line.jpg",THRESHOLD_LINES);
 
     //perform hough transform
     int rho = sqrt(image.rows*image.rows + image.cols*image.cols);
@@ -120,5 +122,6 @@ void HoughLine::line_detect(Mat &image1) {
 
     // Build the hough space
     Mat hough_lines = hough_builder_lines(thr,dir_image,hough_space,rho,theta);
-    drawLines(hough_lines,image);
+    Mat intersections = drawLines(hough_lines,image);
+    return intersections;
 }
