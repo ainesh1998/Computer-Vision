@@ -332,6 +332,7 @@ float eval(int rho,float theta,int x){
 }
 
 void drawLines(Mat hough_lines, Mat image) {
+    Mat temp(image.rows,image.cols,CV_32FC1,Scalar(0));
     Mat line_space(image.rows,image.cols,CV_8UC1,Scalar(0));
     //hough_lines.rows = rho
     //hough_lines.cols = theta
@@ -339,12 +340,15 @@ void drawLines(Mat hough_lines, Mat image) {
         for(int x = 0; x < hough_lines.cols; x++){
             if(hough_lines.at<uchar>(y,x) == 255){
                 float grad_rad = ((x+MIN_THETA)*M_PI)/180;
-                int y_0 = eval(y,grad_rad,0);
-                int y_1 = eval(y,grad_rad,image.cols-1);
-                line(line_space,Point(0,y_0),Point(image.cols-1,y_1),Scalar(255));
+
+                for (int i = 0; i < image.cols; i++) {
+                    int j = eval(y,grad_rad,i);
+                    if (j >= 0 && j < image.rows) temp.at<float>(j,i)++;
+                }
             }
         }
     }
+    normalize(temp, line_space, 0, 255, NORM_MINMAX);
     imwrite("line_space.jpg",line_space);
 }
 
