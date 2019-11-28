@@ -1,5 +1,7 @@
 File name, f1-score
 
+RECT_CENTRE_THRESHOLD 0.45
+
 dart0.jpg, 1.00
 dart1.jpg, 1.00
 dart2.jpg, -nan
@@ -15,4 +17,42 @@ dart11.jpg, 1.00
 dart12.jpg, 1.00
 dart13.jpg, -nan
 dart14.jpg, 0.67
+dart15.jpg, 1.00
+
+RECT_CENTRE_THRESHOLD 0.4
+
+dart0.jpg, 1.00
+dart1.jpg, 1.00
+dart2.jpg, -nan
+dart3.jpg, -nan
+dart4.jpg, -nan
+dart5.jpg, 1.00
+dart6.jpg, 1.00
+dart7.jpg, 0.67
+dart8.jpg, 0.67
+dart9.jpg, 1.00
+dart10.jpg, -nan
+dart11.jpg, 0.67
+dart12.jpg, 1.00
+dart13.jpg, -nan
+dart14.jpg, 1.00
+dart15.jpg, 1.00
+
+RECT_CENTRE_THRESHOLD 0.35
+
+dart0.jpg, 1.00
+dart1.jpg, 0.67
+dart2.jpg, -nan
+dart3.jpg, -nan
+dart4.jpg, 0.67
+dart5.jpg, 1.00
+dart6.jpg, 1.33
+dart7.jpg, 1.00
+dart8.jpg, 0.67
+dart9.jpg, 1.00
+dart10.jpg, -nan
+dart11.jpg, 0.67
+dart12.jpg, 1.00
+dart13.jpg, -nan
+dart14.jpg, 1.00
 dart15.jpg, 1.00
