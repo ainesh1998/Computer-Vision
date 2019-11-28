@@ -25,8 +25,7 @@ using namespace cv;
 /** Function Headers */
 vector<Rect> detectAndDisplay( Mat frame );
 //combine viola jones predictions with hough space predictions for stronger classifier
-vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartboards);
-vector<Rect> violaHough2(Mat centres, Mat line_intersections, vector<Rect> dartboards);
+vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartboards, Mat radii);
 void drawTruth(Mat frame,int values[][4],int length);
 double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_length);
 double intersectionOverUnion(Rect prediction,int truth_value[4]);
@@ -46,7 +45,8 @@ int main( int argc, const char** argv )
     // 1. Read Input Image
 	Mat frame = imread(argv[1], CV_LOAD_IMAGE_COLOR);
 
-	Mat centres = houghCircle.circle_detect(frame);
+	Mat radii = houghCircle.circle_detect(frame);
+	Mat centres = imread("circle_space_thr.jpg",0);
 	Mat line_intersections = houghLine.line_detect(frame);
 
 	// 2. Load the Strong Classifier in a structure called `Cascade'
@@ -55,14 +55,15 @@ int main( int argc, const char** argv )
 	// 3. Detect Faces and Display Result
 	vector<Rect> dartboards;
 	dartboards = detectAndDisplay( frame );
-	vector<Rect> predictions = violaHough2(centres,line_intersections,dartboards);
-	// groupRectangles(predictions, 2, 1.5);
+
+	vector<Rect> predictions = violaHough(centres,line_intersections,dartboards,radii);
+
 	std::cout << predictions.size() << std::endl;
 	for( int i = 0; i < predictions.size(); i++ )
 	{
 		rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
 	}
-	int ground_truth_vals[][4] = {{101,95,91,92}};
+	int ground_truth_vals[][4] = {{250,166,152,154}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
@@ -91,14 +92,15 @@ vector<Rect> detectAndDisplay( Mat frame )
 	return faces;
 }
 
-vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartboards){
+vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartboards, Mat radii){
 	vector<Rect> predictions;
+	vector<Rect> final;
 	for(int i = 0; i < dartboards.size(); i++){
 		bool found = false;
-		for(int y = dartboards[i].y +RECT_CENTRE_THRESHOLD * dartboards[i].height; y <= dartboards[i].y + (1-RECT_CENTRE_THRESHOLD)* dartboards[i].height; y++){
+		for(int y = dartboards[i].y +RECT_CENTRE_THRESHOLD * dartboards[i].height; y < dartboards[i].y + (1-RECT_CENTRE_THRESHOLD)* dartboards[i].height; y++){
 			for(int x = dartboards[i].x + RECT_CENTRE_THRESHOLD * dartboards[i].width; x < dartboards[i].x + (1-RECT_CENTRE_THRESHOLD)*dartboards[i].width; x++){
 				if(!found){
-					if(centres.at<uchar>(y,x) == 255 && line_intersections.at<uchar>(y,x) == 255){
+					if(centres.at<uchar>(y,x) == 255 && line_intersections.at<uchar>(y,x) == 255) {
 						predictions.push_back(dartboards[i]);
 						found = true;
 					}
@@ -106,39 +108,45 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 			}
 		}
 	}
-	return predictions;
-}
 
-vector<Rect> violaHough2(Mat centres, Mat line_intersections, vector<Rect> dartboards){
-	vector<Rect> predictions;
+	std::cout << predictions.size() << '\n';
+	vector<Rect> chucked;
 
-	for(int i = 0; i < dartboards.size(); i++){
-		int innerCount = 0;
-		int wholeCount = 0;
+	// check for rectangles inside another rectangle, store already processed ones as pairs in a vector 
 
-		int centre_height = (1- 2*RECT_CENTRE_THRESHOLD)*dartboards[i].height;
-		int centre_width = (1- 2*RECT_CENTRE_THRESHOLD)*dartboards[i].width;
+	for (int i = 0; i < predictions.size(); i++) {
+		bool isOverlap = false;
 
-		for(int y = dartboards[i].y; y < dartboards[i].y + dartboards[i].height; y++){
-			for(int x = dartboards[i].x; x < dartboards[i].x + dartboards[i].width; x++){
-				if(centres.at<uchar>(y,x) == 255) wholeCount++;
-				if(line_intersections.at<uchar>(y,x) == 255) wholeCount++;
+		for (int j = 0; j < predictions.size(); j++) {
+			Point centre1 = (predictions[i].tl() + predictions[i].br()) * 0.5;
+			Point centre2 = (predictions[j].tl() + predictions[j].br()) * 0.5;
+			float total = 1/(radii.at<float>(centre1.y,centre1.x) + radii.at<float>(centre2.y,centre2.x));
+			Point centre = (radii.at<float>(centre1.y,centre1.x)*centre1 + radii.at<float>(centre2.y,centre2.x)*centre2) * total;
+			int dist1 = abs(radii.at<float>(centre.y, centre.x) - predictions[i].width/2);
+			int dist2 = abs(radii.at<float>(centre.y, centre.x) - predictions[j].width/2);
+			bool choosingRect = dist1 < dist2;
+			Rect smallerOne = choosingRect ? predictions[i] : predictions[j];
+			Rect largerOne = !choosingRect ? predictions[i] : predictions[j];
 
-				if(y >= dartboards[i].y+RECT_CENTRE_THRESHOLD*dartboards[i].height && y < dartboards[i].y+(1-RECT_CENTRE_THRESHOLD)*dartboards[i].height
-				&& x >= dartboards[i].x+RECT_CENTRE_THRESHOLD*dartboards[i].width && x < dartboards[i].x+(1-RECT_CENTRE_THRESHOLD)*dartboards[i].width) {
-					if(centres.at<uchar>(y,x) == 255) innerCount++;
-					if(line_intersections.at<uchar>(y,x) == 255) innerCount++;
+			if (i != j && find(final.begin(), final.end(), predictions[i]) == final.end() && find(final.begin(), final.end(), predictions[j]) == final.end()) {
+				if ((abs(centre1.x - centre2.x) < 0.1*predictions[i].width && abs(centre1.y - centre2.y)) < 0.1*predictions[i].height) {
+
+					final.push_back(smallerOne);
+					chucked.push_back(largerOne);
+					isOverlap = true;
 				}
 			}
+			else {
+				final.push_back(predictions[j]);
+			}
 		}
-	  	float area = centre_width * centre_height;
-		float outerArea = (dartboards[i].height*dartboards[i].width) - area;
-		float pixelDensity = innerCount/area;
-		float outerPixelDensity = (wholeCount-innerCount)/outerArea;
-		std::cout << pixelDensity << '\n';
-		if (pixelDensity > outerPixelDensity) predictions.push_back(dartboards[i]);
+		if (!isOverlap && find(chucked.begin(), chucked.end(), predictions[i]) == chucked.end())  {
+			final.push_back(predictions[i]);
+		}
 	}
-	return predictions;
+	groupRectangles(final,1,0);
+	// final = predictions;
+	return final;
 }
 
 ///// FROM face.cpp /////

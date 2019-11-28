@@ -103,6 +103,7 @@ Mat drawLines(Mat hough_lines, Mat image) {
 Mat HoughLine::line_detect(Mat &image1) {
     Mat image;
     cvtColor(image1,image,CV_BGR2GRAY);
+    // equalizeHist(image, image);
     HoughHelper h;
 
     //get magnitude image and direction image

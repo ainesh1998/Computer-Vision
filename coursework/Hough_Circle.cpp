@@ -10,7 +10,7 @@
 #include "Hough_Circle.h"
 #include "Hough_Helper.h"
 #define THRESHOLD_CIRCLES 80 // thresholding the original magnitude image for hough circles
-#define THRESHOLD_HOUGH_CENTRES 80 // thresholding the hough space for hough circles
+#define THRESHOLD_HOUGH_CENTRES 120 // thresholding the hough space for hough circles
 #define MAX_RADIUS 150 // maximum radius for circles in the hough circle space
 #define MIN_RADIUS 15 // minimum radius for circles in the hough circle space
 
@@ -63,23 +63,32 @@ Mat hough_builder_circles(Mat &thr, Mat &dir, int ***hough_space, int centreX, i
     // Create 2D Hough space image
     Mat hough2D(thr.rows, thr.cols, CV_32FC1, Scalar(0));
     Mat displayHough(thr.rows, thr.cols, CV_8UC1, Scalar(0));
+    Mat radii(thr.rows, thr.cols, CV_32FC1, Scalar(0));
+
     for(int y = 0; y < centreY; y++){
         for(int x = 0; x < centreX; x++){
+            int temp = 0;
+            int total = 0;
             for(int r = 0; r < radius; r++){
                 hough2D.at<float>(y, x) += hough_space[x][y][r];
+                temp += (r + MIN_RADIUS) * hough_space[x][y][r];
+                total += hough_space[x][y][r];
             }
+            radii.at<float>(y,x) = total > 0 ? temp/total : 0;
         }
     }
     normalize(hough2D, displayHough, 0, 255, NORM_MINMAX);
     imwrite("circle_space.jpg", displayHough);
     HoughHelper h;
     Mat thresholded = h.threshold("circle_space.jpg","circle_space_thr.jpg",THRESHOLD_HOUGH_CENTRES);
-    return thresholded;
+    imwrite("radii.jpg",radii);
+    return radii;
 }
 
 Mat HoughCircle::circle_detect(Mat &image1) {
     Mat image;
     cvtColor(image1,image,CV_BGR2GRAY);
+    // equalizeHist(image, image);
     //get magnitude image and direction image
     HoughHelper h;
     Mat dir_image = h.sobel(image);
@@ -94,7 +103,8 @@ Mat HoughCircle::circle_detect(Mat &image1) {
     hough_space = malloc3dArray(centreX, centreY, radius);
 
     // Build the hough space
-    Mat hough_centres = hough_builder_circles(thr,dir_image,hough_space,centreX,centreY,radius);
+    Mat radii = hough_builder_circles(thr,dir_image,hough_space,centreX,centreY,radius);
+    Mat hough_centres = imread("circle_space_thr.jpg",0);
     h.overlayHough(image, hough_centres, "circles_detected.jpg");
-    return hough_centres;
+    return radii;
 }
