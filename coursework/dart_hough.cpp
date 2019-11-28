@@ -17,7 +17,7 @@
 #include "Hough_Line.h"
 
 #define IOU_THRESHOLD 0.4
-#define RECT_CENTRE_THRESHOLD 0.35
+#define RECT_CENTRE_THRESHOLD 0.4
 
 using namespace std;
 using namespace cv;
@@ -26,6 +26,7 @@ using namespace cv;
 vector<Rect> detectAndDisplay( Mat frame );
 //combine viola jones predictions with hough space predictions for stronger classifier
 vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartboards);
+vector<Rect> violaHough2(Mat centres, Mat line_intersections, vector<Rect> dartboards);
 void drawTruth(Mat frame,int values[][4],int length);
 double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_length);
 double intersectionOverUnion(Rect prediction,int truth_value[4]);
@@ -54,14 +55,14 @@ int main( int argc, const char** argv )
 	// 3. Detect Faces and Display Result
 	vector<Rect> dartboards;
 	dartboards = detectAndDisplay( frame );
-	vector<Rect> predictions = violaHough(centres,line_intersections,dartboards);
+	vector<Rect> predictions = violaHough2(centres,line_intersections,dartboards);
 	// groupRectangles(predictions, 2, 1.5);
 	std::cout << predictions.size() << std::endl;
 	for( int i = 0; i < predictions.size(); i++ )
 	{
 		rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
 	}
-	int ground_truth_vals[][4] = {{152,53,133,145}};
+	int ground_truth_vals[][4] = {{101,95,91,92}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
@@ -87,14 +88,6 @@ vector<Rect> detectAndDisplay( Mat frame )
 	// 2. Perform Viola-Jones Object Detection
 	cascade.detectMultiScale( frame_gray, faces, 1.1, 1, 0|CV_HAAR_SCALE_IMAGE, Size(50, 50), Size(500,500) );
 
-       // 3. Print number of Faces found
-	// std::cout << faces.size() << std::endl;
-
-       // 4. Draw box around faces found
-	for( int i = 0; i < faces.size(); i++ )
-	{
-		// rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
-	}
 	return faces;
 }
 
@@ -112,6 +105,38 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 				}
 			}
 		}
+	}
+	return predictions;
+}
+
+vector<Rect> violaHough2(Mat centres, Mat line_intersections, vector<Rect> dartboards){
+	vector<Rect> predictions;
+
+	for(int i = 0; i < dartboards.size(); i++){
+		int innerCount = 0;
+		int wholeCount = 0;
+
+		int centre_height = (1- 2*RECT_CENTRE_THRESHOLD)*dartboards[i].height;
+		int centre_width = (1- 2*RECT_CENTRE_THRESHOLD)*dartboards[i].width;
+
+		for(int y = dartboards[i].y; y < dartboards[i].y + dartboards[i].height; y++){
+			for(int x = dartboards[i].x; x < dartboards[i].x + dartboards[i].width; x++){
+				if(centres.at<uchar>(y,x) == 255) wholeCount++;
+				if(line_intersections.at<uchar>(y,x) == 255) wholeCount++;
+
+				if(y >= dartboards[i].y+RECT_CENTRE_THRESHOLD*dartboards[i].height && y < dartboards[i].y+(1-RECT_CENTRE_THRESHOLD)*dartboards[i].height
+				&& x >= dartboards[i].x+RECT_CENTRE_THRESHOLD*dartboards[i].width && x < dartboards[i].x+(1-RECT_CENTRE_THRESHOLD)*dartboards[i].width) {
+					if(centres.at<uchar>(y,x) == 255) innerCount++;
+					if(line_intersections.at<uchar>(y,x) == 255) innerCount++;
+				}
+			}
+		}
+	  	float area = centre_width * centre_height;
+		float outerArea = (dartboards[i].height*dartboards[i].width) - area;
+		float pixelDensity = innerCount/area;
+		float outerPixelDensity = (wholeCount-innerCount)/outerArea;
+		std::cout << pixelDensity << '\n';
+		if (pixelDensity > outerPixelDensity) predictions.push_back(dartboards[i]);
 	}
 	return predictions;
 }
