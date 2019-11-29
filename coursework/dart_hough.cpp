@@ -26,6 +26,7 @@ using namespace cv;
 vector<Rect> detectAndDisplay( Mat frame );
 //combine viola jones predictions with hough space predictions for stronger classifier
 vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartboards, Mat radii);
+bool compareRect(Rect rect1, Rect rect2);
 void drawTruth(Mat frame,int values[][4],int length);
 double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_length);
 double intersectionOverUnion(Rect prediction,int truth_value[4]);
@@ -109,44 +110,59 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 		}
 	}
 
-	std::cout << predictions.size() << '\n';
-	vector<Rect> chucked;
-
-	// check for rectangles inside another rectangle, store already processed ones as pairs in a vector 
+	vector<vector<Rect> > alreadySeenPairs; // a vector of tuples containing pairs already processed
 
 	for (int i = 0; i < predictions.size(); i++) {
-		bool isOverlap = false;
+		bool noNesting = true; // true if predictions[i] is not anywhere in alreadySeenPairs
 
 		for (int j = 0; j < predictions.size(); j++) {
-			Point centre1 = (predictions[i].tl() + predictions[i].br()) * 0.5;
-			Point centre2 = (predictions[j].tl() + predictions[j].br()) * 0.5;
-			float total = 1/(radii.at<float>(centre1.y,centre1.x) + radii.at<float>(centre2.y,centre2.x));
-			Point centre = (radii.at<float>(centre1.y,centre1.x)*centre1 + radii.at<float>(centre2.y,centre2.x)*centre2) * total;
-			int dist1 = abs(radii.at<float>(centre.y, centre.x) - predictions[i].width/2);
-			int dist2 = abs(radii.at<float>(centre.y, centre.x) - predictions[j].width/2);
-			bool choosingRect = dist1 < dist2;
-			Rect smallerOne = choosingRect ? predictions[i] : predictions[j];
-			Rect largerOne = !choosingRect ? predictions[i] : predictions[j];
+			// check for nested rectangles
 
-			if (i != j && find(final.begin(), final.end(), predictions[i]) == final.end() && find(final.begin(), final.end(), predictions[j]) == final.end()) {
-				if ((abs(centre1.x - centre2.x) < 0.1*predictions[i].width && abs(centre1.y - centre2.y)) < 0.1*predictions[i].height) {
+			// intersection of predictions[i] and predictions[j], equal to the smaller rectangle if nested
+			int intersectionArea = (predictions[i] & predictions[j]).area();
 
-					final.push_back(smallerOne);
-					chucked.push_back(largerOne);
-					isOverlap = true;
+			if (intersectionArea == predictions[i].area() || intersectionArea == predictions[j].area()) {
+				Rect smallerOne = intersectionArea == predictions[i].area() ? predictions[i] : predictions[j];
+				Rect largerOne = intersectionArea == predictions[i].area() ? predictions[j] : predictions[i];
+
+				// get the difference between each radii and the average radii at that centre
+				int dist1 = abs(radii.at<float>(smallerOne.y + smallerOne.height/2, smallerOne.x + smallerOne.width/2) - smallerOne.width/2);
+				int dist2 = abs(radii.at<float>(largerOne.y + largerOne.height/2, largerOne.x + largerOne.width/2) - largerOne.width/2);
+
+				// the radius that is closer to the actual one is the better rectangle
+				Rect theOne = dist1 < dist2 ? smallerOne : largerOne;
+
+				// true if (predictions[i],predictions[j]) has already been seen
+				bool isSeen = false;
+
+				for (int k = 0; k < alreadySeenPairs.size(); k++) {
+					isSeen = isSeen || compareRect(alreadySeenPairs[k][0],predictions[i])&&compareRect(alreadySeenPairs[k][1],predictions[j]);
+					noNesting = noNesting && !(compareRect(alreadySeenPairs[k][0],predictions[i])||compareRect(alreadySeenPairs[k][1],predictions[i]));
+				}
+
+				if (!isSeen && i != j) {
+					// add the pair
+					final.push_back(theOne);
+					vector<Rect> pair1;
+					vector<Rect> pair2;
+					pair1.push_back(predictions[i]);
+					pair1.push_back(predictions[j]);
+					pair2.push_back(predictions[j]);
+					pair2.push_back(predictions[i]);
+					alreadySeenPairs.push_back(pair1);
+					alreadySeenPairs.push_back(pair2);
+					noNesting = false; // it is nested so we cannot add it at the end
 				}
 			}
-			else {
-				final.push_back(predictions[j]);
-			}
 		}
-		if (!isOverlap && find(chucked.begin(), chucked.end(), predictions[i]) == chucked.end())  {
-			final.push_back(predictions[i]);
-		}
+		if (noNesting) final.push_back(predictions[i]);
 	}
-	groupRectangles(final,1,0);
-	// final = predictions;
 	return final;
+}
+
+// Checks if two Rects are equal
+bool compareRect(Rect rect1, Rect rect2) {
+	return rect1.x == rect2.x && rect1.y == rect2.y && rect1.height == rect2.height && rect1.width == rect2.width;
 }
 
 ///// FROM face.cpp /////
