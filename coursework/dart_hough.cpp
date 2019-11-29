@@ -18,6 +18,7 @@
 
 #define IOU_THRESHOLD 0.4
 #define RECT_CENTRE_THRESHOLD 0.38
+#define CIRCLE_RECT_RATIO 0.09
 
 using namespace std;
 using namespace cv;
@@ -136,8 +137,8 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 		}
 		float circleRatio = innerCountCircles/wholeCountCircles;
 		float lineRatio = innerCountLines/wholeCountLines;
-		float actualRatio = (2*circleRatio + lineRatio)/3;
-		if (actualRatio > 0.1) predictions.push_back(dartboards[i]);
+		float actualRatio = (circleRatio + lineRatio)/2;
+		if (actualRatio > CIRCLE_RECT_RATIO) predictions.push_back(dartboards[i]);
 	}
 
 	// CHECK FOR NESTED RECTANGLES
