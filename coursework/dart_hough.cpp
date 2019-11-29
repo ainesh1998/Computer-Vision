@@ -17,7 +17,7 @@
 #include "Hough_Line.h"
 
 #define IOU_THRESHOLD 0.4
-#define RECT_CENTRE_THRESHOLD 0.4
+#define RECT_CENTRE_THRESHOLD 0.35
 
 using namespace std;
 using namespace cv;
@@ -102,7 +102,11 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 		bool found = false;
 		for(int y = dartboards[i].y +RECT_CENTRE_THRESHOLD * dartboards[i].height; y < dartboards[i].y + (1-RECT_CENTRE_THRESHOLD)* dartboards[i].height; y++){
 			for(int x = dartboards[i].x + RECT_CENTRE_THRESHOLD * dartboards[i].width; x < dartboards[i].x + (1-RECT_CENTRE_THRESHOLD)*dartboards[i].width; x++){
-				if(!found){
+				Point centre = (dartboards[i].tl() + dartboards[i].br()) * 0.5;
+				int dist = (centre.x-x)*(centre.x-x) + (centre.y-y)*(centre.y-y);
+				int r = (1 - 2*RECT_CENTRE_THRESHOLD) * dartboards[i].height;
+
+				if(!found && dist < r*r){
 					if(centres.at<uchar>(y,x) == 255 && line_intersections.at<uchar>(y,x) == 255) {
 						predictions.push_back(dartboards[i]);
 						found = true;
