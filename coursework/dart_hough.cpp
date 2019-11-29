@@ -17,7 +17,7 @@
 #include "Hough_Line.h"
 
 #define IOU_THRESHOLD 0.4
-#define RECT_CENTRE_THRESHOLD 0.35
+#define RECT_CENTRE_THRESHOLD 0.38
 
 using namespace std;
 using namespace cv;
@@ -98,26 +98,49 @@ vector<Rect> detectAndDisplay( Mat frame )
 vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartboards, Mat radii){
 	vector<Rect> predictions;
 	vector<Rect> final;
+
 	for(int i = 0; i < dartboards.size(); i++){
-		bool found = false;
+		int innerCountCircles = 0;
+		int innerCountLines = 0;
+		Point centre = (dartboards[i].tl() + dartboards[i].br()) * 0.5;
+		int r = (1 - 2*RECT_CENTRE_THRESHOLD) * dartboards[i].height;
+		float centreArea = M_PI*r*r;
+
 		for(int y = dartboards[i].y +RECT_CENTRE_THRESHOLD * dartboards[i].height; y < dartboards[i].y + (1-RECT_CENTRE_THRESHOLD)* dartboards[i].height; y++){
 			for(int x = dartboards[i].x + RECT_CENTRE_THRESHOLD * dartboards[i].width; x < dartboards[i].x + (1-RECT_CENTRE_THRESHOLD)*dartboards[i].width; x++){
-				Point centre = (dartboards[i].tl() + dartboards[i].br()) * 0.5;
+				// check for the circle inside the rect centre
 				int dist = (centre.x-x)*(centre.x-x) + (centre.y-y)*(centre.y-y);
-				int r = (1 - 2*RECT_CENTRE_THRESHOLD) * dartboards[i].height;
-
-				if(!found && dist < r*r){
-					if(centres.at<uchar>(y,x) == 255 && line_intersections.at<uchar>(y,x) == 255) {
-						predictions.push_back(dartboards[i]);
-						found = true;
+				if(dist < r*r) {
+					if(centres.at<uchar>(y,x) == 255) {
+						innerCountCircles++;
+					}
+					if(line_intersections.at<uchar>(y,x) == 255) {
+						innerCountLines++;
 					}
 				}
 			}
 		}
+
+		float wholeCountCircles = 0.0;
+		float wholeCountLines = 0.0;
+		for (int y = 0; y < centres.rows; y++) {
+			for (int x = 0; x < centres.cols; x++) {
+				if (centres.at<uchar>(y,x) == 255) {
+					wholeCountCircles += 1;
+
+				}
+				if (line_intersections.at<uchar>(y,x) == 255) {
+					wholeCountLines += 1;
+				}
+			}
+		}
+		float circleRatio = innerCountCircles/wholeCountCircles;
+		float lineRatio = innerCountLines/wholeCountLines;
+		float actualRatio = (2*circleRatio + lineRatio)/3;
+		if (actualRatio > 0.1) predictions.push_back(dartboards[i]);
 	}
 
 	// CHECK FOR NESTED RECTANGLES
-
 	vector<vector<Rect> > alreadySeenPairs; // a vector of tuples containing pairs already processed
 
 	for (int i = 0; i < predictions.size(); i++) {
