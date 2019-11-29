@@ -31,11 +31,12 @@ void drawTruth(Mat frame,int values[][4],int length);
 double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_length);
 double intersectionOverUnion(Rect prediction,int truth_value[4]);
 double calc_f1_score(vector<Rect> predictions,int truth_values[][4],int truth_length,double tpr);
+void GaussianBlur(cv::Mat &input, int size, cv::Mat &blurredOutput);
+Mat sharpen(Mat &image, int iterations);
 
 /** Global variables */
 String cascade_name = "dartcascade/cascade.xml";
 CascadeClassifier cascade;
-
 
 /** @function main */
 int main( int argc, const char** argv )
@@ -45,6 +46,7 @@ int main( int argc, const char** argv )
 
     // 1. Read Input Image
 	Mat frame = imread(argv[1], CV_LOAD_IMAGE_COLOR);
+	Mat sharpenedFrame = sharpen(frame, 2);
 
 	Mat radii = houghCircle.circle_detect(frame);
 	Mat centres = imread("circle_space_thr.jpg",0);
@@ -109,6 +111,8 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 			}
 		}
 	}
+
+	// CHECK FOR NESTED RECTANGLES
 
 	vector<vector<Rect> > alreadySeenPairs; // a vector of tuples containing pairs already processed
 
@@ -226,4 +230,89 @@ double intersectionOverUnion(Rect prediction,int truth_value[4]){
 	double iou = intersect_area/(pred_area + truth_area - intersect_area);
 	// printf("%f\n",iou );
 	return iou;
+}
+
+/// FROM LAB 3 ///
+
+void GaussianBlur(cv::Mat &input, int size, cv::Mat &blurredOutput)
+{
+	// intialise the output using the input
+	blurredOutput.create(input.size(), input.type());
+
+	// create the Gaussian kernel in 1D
+	cv::Mat kX = cv::getGaussianKernel(size, -1);
+	cv::Mat kY = cv::getGaussianKernel(size, -1);
+
+	// make it 2D multiply one by the transpose of the other
+	cv::Mat kernel = kX * kY.t();
+
+	//CREATING A DIFFERENT IMAGE kernel WILL BE NEEDED
+	//TO PERFORM OPERATIONS OTHER THAN GUASSIAN BLUR!!!
+
+	// we need to create a padded version of the input
+	// or there will be border effects
+	int kernelRadiusX = ( kernel.size[0] - 1 ) / 2;
+	int kernelRadiusY = ( kernel.size[1] - 1 ) / 2;
+
+       // SET KERNEL VALUES
+	for( int m = -kernelRadiusX; m <= kernelRadiusX; m++ ) {
+	  for( int n = -kernelRadiusY; n <= kernelRadiusY; n++ )
+           kernel.at<double>(m+ kernelRadiusX, n+ kernelRadiusY) = (double) 1.0/(size*size);
+
+       }
+
+	cv::Mat paddedInput;
+	cv::copyMakeBorder( input, paddedInput,
+		kernelRadiusX, kernelRadiusX, kernelRadiusY, kernelRadiusY,
+		cv::BORDER_REPLICATE );
+
+	// now we can do the convoltion
+	for ( int i = 0; i < input.rows; i++ )
+	{
+		for( int j = 0; j < input.cols; j++ )
+		{
+			double sum = 0.0;
+			for( int m = -kernelRadiusX; m <= kernelRadiusX; m++ )
+			{
+				for( int n = -kernelRadiusY; n <= kernelRadiusY; n++ )
+				{
+					// find the correct indices we are using
+					int imagex = i + m + kernelRadiusX;
+					int imagey = j + n + kernelRadiusY;
+					int kernelx = m + kernelRadiusX;
+					int kernely = n + kernelRadiusY;
+
+					// get the values from the padded image and the kernel
+					int imageval = ( int ) paddedInput.at<uchar>( imagex, imagey );
+					double kernalval = kernel.at<double>( kernelx, kernely );
+
+					// do the multiplication
+					sum += imageval * kernalval;
+				}
+			}
+			// set the output value as the sum of the convolution
+			blurredOutput.at<uchar>(i, j) = (uchar) sum;
+		}
+	}
+}
+
+// unsharp masking
+Mat sharpen(Mat &frame, int iterations) {
+	Mat gray_image;
+	Mat carBlurred(frame.rows,frame.cols,CV_32FC1,Scalar(0));
+	Mat sharpened(frame.rows,frame.cols,CV_32FC1,Scalar(0));
+	Mat final(frame.rows,frame.cols,CV_8UC1,Scalar(0));
+
+	cvtColor(frame, gray_image, CV_BGR2GRAY );
+	GaussianBlur(gray_image,5,carBlurred);
+
+	sharpened = gray_image;
+
+	for (int i = 0; i < iterations; i++) {
+		sharpened += gray_image - carBlurred;
+	}
+
+	normalize(sharpened,final,0,255,NORM_MINMAX);
+	imwrite("sharpened.jpg",final);
+	return final;
 }
