@@ -128,19 +128,7 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 
 		float wholeCountCircles = 0.0;
 		float wholeCountLines = 0.0;
-
-		// for(int y = dartboards[i].y +RECT_CENTRE_THRESHOLD/2 * dartboards[i].height; y < dartboards[i].y + (1-RECT_CENTRE_THRESHOLD/2)* dartboards[i].height; y++){
-		// 	for(int x = dartboards[i].x + RECT_CENTRE_THRESHOLD/2 * dartboards[i].width; x < dartboards[i].x + (1-RECT_CENTRE_THRESHOLD/2)*dartboards[i].width; x++){
-		// 		if (centres.at<uchar>(y,x) == 255) {
-		// 			wholeCountCircles += 1;
-		//
-		// 		}
-		// 		if (line_intersections.at<uchar>(y,x) == 255) {
-		// 			wholeCountLines += 1;
-		// 		}
-		// 	}
-		// }
-
+		
 		for(int y = 0 ; y < centres.rows; y++){
 			for(int x = 0; x < centres.cols; x++){
 				if (centres.at<uchar>(y,x) == 255) {
