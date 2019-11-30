@@ -1,31 +1,10 @@
 File name,True Positive Rate
 
-RECT_CENTRE_THRESHOLD 0.45
+RECT_CENTRE_THRESHOLD 0.38,CIRCLE_RECT_RATIO 0.09
 
 dart0.jpg, 1.00
 dart1.jpg, 1.00
-dart2.jpg, 0.00
-dart3.jpg, 0.00
-dart4.jpg, 0.00
-dart5.jpg, 1.00
-dart6.jpg, 1.00
-dart7.jpg, 0.00
-dart8.jpg, 0.50
-dart9.jpg, 1.00
-dart10.jpg, 0.00
-dart11.jpg, 1.00
-dart12.jpg, 1.00
-dart13.jpg, 0.00
-dart14.jpg, 0.50
-dart15.jpg, 1.00
-
-average = 0.56
-
-RECT_CENTRE_THRESHOLD 0.4
-
-dart0.jpg, 1.00
-dart1.jpg, 1.00
-dart2.jpg, 0.00
+dart2.jpg, 1.00
 dart3.jpg, 0.00
 dart4.jpg, 0.00
 dart5.jpg, 1.00
@@ -33,32 +12,11 @@ dart6.jpg, 1.00
 dart7.jpg, 1.00
 dart8.jpg, 0.50
 dart9.jpg, 1.00
-dart10.jpg, 0.00
+dart10.jpg, 0.33
 dart11.jpg, 1.00
 dart12.jpg, 1.00
 dart13.jpg, 0.00
 dart14.jpg, 1.00
 dart15.jpg, 1.00
 
-average = 0.66
-
-RECT_CENTRE_THRESHOLD 0.35
-
-dart0.jpg, 1.00
-dart1.jpg, 1.00
-dart2.jpg, 0.00
-dart3.jpg, 0.00
-dart4.jpg, 1.00
-dart5.jpg, 1.00
-dart6.jpg, 2.00
-dart7.jpg, 2.00
-dart8.jpg, 0.50
-dart9.jpg, 1.00
-dart10.jpg, 0.00
-dart11.jpg, 1.00
-dart12.jpg, 1.00
-dart13.jpg, 0.00
-dart14.jpg, 1.00
-dart15.jpg, 1.00
-
-average = 0.84 - but some overlaps and false positives 
+average = 0.74
