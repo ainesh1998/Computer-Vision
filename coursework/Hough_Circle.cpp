@@ -85,10 +85,7 @@ Mat hough_builder_circles(Mat &thr, Mat &dir, int ***hough_space, int centreX, i
     return radii;
 }
 
-Mat HoughCircle::circle_detect(Mat &image1) {
-    Mat image;
-    cvtColor(image1,image,CV_BGR2GRAY);
-    // equalizeHist(image, image);
+Mat HoughCircle::circle_detect(Mat &image) {
     //get magnitude image and direction image
     HoughHelper h;
     Mat dir_image = h.sobel(image);

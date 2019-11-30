@@ -16,7 +16,7 @@
 #include "Hough_Circle.h"
 #include "Hough_Line.h"
 
-#define IOU_THRESHOLD 0.4
+#define IOU_THRESHOLD 0.3
 #define RECT_CENTRE_THRESHOLD 0.38
 #define CIRCLE_RECT_RATIO 0.09
 
@@ -49,16 +49,18 @@ int main( int argc, const char** argv )
 	Mat frame = imread(argv[1], CV_LOAD_IMAGE_COLOR);
 	Mat sharpenedFrame = sharpen(frame, 2);
 
-	Mat radii = houghCircle.circle_detect(frame);
+	Mat gray_image;
+	cvtColor(frame, gray_image, CV_BGR2GRAY);
+
+	Mat radii = houghCircle.circle_detect(gray_image);
 	Mat centres = imread("circle_space_thr.jpg",0);
-	Mat line_intersections = houghLine.line_detect(frame);
+	Mat line_intersections = houghLine.line_detect(gray_image);
 
 	// 2. Load the Strong Classifier in a structure called `Cascade'
 	if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
 
 	// 3. Detect Faces and Display Result
-	vector<Rect> dartboards;
-	dartboards = detectAndDisplay( frame );
+	vector<Rect> dartboards = detectAndDisplay( frame );
 
 	vector<Rect> predictions = violaHough(centres,line_intersections,dartboards,radii);
 
@@ -106,11 +108,13 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 		Point centre = (dartboards[i].tl() + dartboards[i].br()) * 0.5;
 		int r = (1 - 2*RECT_CENTRE_THRESHOLD) * dartboards[i].height;
 		float centreArea = M_PI*r*r;
+		float wholeArea = dartboards[i].height * dartboards[i].width;
 
 		for(int y = dartboards[i].y +RECT_CENTRE_THRESHOLD * dartboards[i].height; y < dartboards[i].y + (1-RECT_CENTRE_THRESHOLD)* dartboards[i].height; y++){
 			for(int x = dartboards[i].x + RECT_CENTRE_THRESHOLD * dartboards[i].width; x < dartboards[i].x + (1-RECT_CENTRE_THRESHOLD)*dartboards[i].width; x++){
 				// check for the circle inside the rect centre
 				int dist = (centre.x-x)*(centre.x-x) + (centre.y-y)*(centre.y-y);
+
 				if(dist < r*r) {
 					if(centres.at<uchar>(y,x) == 255) {
 						innerCountCircles++;
@@ -124,8 +128,21 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 
 		float wholeCountCircles = 0.0;
 		float wholeCountLines = 0.0;
-		for (int y = 0; y < centres.rows; y++) {
-			for (int x = 0; x < centres.cols; x++) {
+
+		// for(int y = dartboards[i].y +RECT_CENTRE_THRESHOLD/2 * dartboards[i].height; y < dartboards[i].y + (1-RECT_CENTRE_THRESHOLD/2)* dartboards[i].height; y++){
+		// 	for(int x = dartboards[i].x + RECT_CENTRE_THRESHOLD/2 * dartboards[i].width; x < dartboards[i].x + (1-RECT_CENTRE_THRESHOLD/2)*dartboards[i].width; x++){
+		// 		if (centres.at<uchar>(y,x) == 255) {
+		// 			wholeCountCircles += 1;
+		//
+		// 		}
+		// 		if (line_intersections.at<uchar>(y,x) == 255) {
+		// 			wholeCountLines += 1;
+		// 		}
+		// 	}
+		// }
+
+		for(int y = 0 ; y < centres.rows; y++){
+			for(int x = 0; x < centres.cols; x++){
 				if (centres.at<uchar>(y,x) == 255) {
 					wholeCountCircles += 1;
 
@@ -135,8 +152,8 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 				}
 			}
 		}
-		float circleRatio = innerCountCircles/wholeCountCircles;
-		float lineRatio = innerCountLines/wholeCountLines;
+		float circleRatio = innerCountCircles/(wholeCountCircles);
+		float lineRatio = innerCountLines/(wholeCountLines);
 		float actualRatio = (circleRatio + lineRatio)/2;
 		if (actualRatio > CIRCLE_RECT_RATIO) predictions.push_back(dartboards[i]);
 	}

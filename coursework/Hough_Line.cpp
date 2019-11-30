@@ -11,8 +11,8 @@
 #include "Hough_Line.h"
 #include "Hough_Helper.h"
 #define THRESHOLD_LINES 80 // thresholding the original magnitude image for hough lines
-#define THRESHOLD_LINE_SPACE 35 // thresholding the hough space for hough lines
-#define THRESHOLD_INTERSECTIONS 100
+#define THRESHOLD_LINE_SPACE 5 // thresholding the hough space for hough lines
+#define THRESHOLD_INTERSECTIONS 150
 #define MIN_THETA -180 // minimum angle represented in the hough line space
 #define MAX_THETA 180 // maximum angle represented in the hough line space
 #define DELTA_THETA 5 // range we consider for angles for each hough line
@@ -86,6 +86,7 @@ Mat drawLines(Mat hough_lines, Mat image) {
             if(hough_lines.at<uchar>(y,x) == 255){
                 float grad_rad = ((x+MIN_THETA)*M_PI)/180;
 
+                // draw line
                 for (int i = 0; i < image.cols; i++) {
                     int j = eval(y,grad_rad,i);
                     if (j >= 0 && j < image.rows) temp.at<float>(j,i)++;
@@ -93,6 +94,13 @@ Mat drawLines(Mat hough_lines, Mat image) {
             }
         }
     }
+
+    for (int y = 0; y < temp.rows; y++) {
+        for (int x = 0; x < temp.cols; x++) {
+
+        }
+    }
+
     normalize(temp, line_space, 0, 255, NORM_MINMAX);
     imwrite("intersection_space.jpg",line_space);
     HoughHelper h;
@@ -100,10 +108,7 @@ Mat drawLines(Mat hough_lines, Mat image) {
     return thresholded;
 }
 
-Mat HoughLine::line_detect(Mat &image1) {
-    Mat image;
-    cvtColor(image1,image,CV_BGR2GRAY);
-    // equalizeHist(image, image);
+Mat HoughLine::line_detect(Mat &image) {
     HoughHelper h;
 
     //get magnitude image and direction image
