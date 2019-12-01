@@ -13,7 +13,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <stdio.h>
-#define IOU_THRESHOLD 0.5
+#define IOU_THRESHOLD 0.4
 using namespace std;
 using namespace cv;
 

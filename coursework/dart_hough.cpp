@@ -16,7 +16,7 @@
 #include "Hough_Circle.h"
 #include "Hough_Line.h"
 
-#define IOU_THRESHOLD 0.3
+#define IOU_THRESHOLD 0.4
 #define RECT_CENTRE_THRESHOLD 0.38
 #define CIRCLE_RECT_RATIO 0.09
 #define INTERSECT_POINT_RADIUS 15
@@ -49,12 +49,13 @@ int main( int argc, const char** argv )
 
     // 1. Read Input Image
 	Mat frame = imread(argv[1], CV_LOAD_IMAGE_COLOR);
-	Mat sharpenedFrame = sharpen(frame,0);
+	Mat sharpenedFrame = sharpen(frame,1);
 	equalizeHist(sharpenedFrame,sharpenedFrame);
 
 	Mat gray_image;
 	cvtColor(frame, gray_image, CV_BGR2GRAY);
 
+	sharpenedFrame = gray_image;
 	Mat radii = houghCircle.circle_detect(gray_image);
 	Mat centres = imread("circle_space_thr.jpg",0);
 	Mat line_intersections = houghLine.line_detect(sharpenedFrame);
@@ -70,7 +71,7 @@ int main( int argc, const char** argv )
 
 	showResults(frame, predictions, centres, line_intersections);
 
-	int ground_truth_vals[][4] = {{64,249,66,94},{840,215,121,126}};
+	int ground_truth_vals[][4] = {{89,101,101,116},{583,126,60,88},{915,149,38,66}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
@@ -89,20 +90,17 @@ void showResults(Mat &frame, vector<Rect> predictions, Mat &centres, Mat &line_i
 		for(int y = 0 ; y < centres.rows; y++){
 			for(int x = 0; x < centres.cols; x++){
 				if (centres.at<uchar>(y,x) == 255) {
-					circle(frame,Point(x,y),1,Scalar(255,110,199),2);
+					// circle(frame,Point(x,y),1,Scalar(255,110,199),2);
 				}
 			}
 		}
-		circle(frame, (predictions[i].tl()+predictions[i].br())*0.5, 0.5*(1-2*RECT_CENTRE_THRESHOLD)*predictions[i].height, Scalar(0,255,0),2);
-		circle(frame, (predictions[i].tl()+predictions[i].br())*0.5, 10, Scalar(0,255,0),2);
-		rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
 	}
 
 	for( int i = 0; i < predictions.size(); i++) {
 		for(int y = 0 ; y < centres.rows; y++){
 			for(int x = 0; x < centres.cols; x++){
 				if (line_intersections.at<uchar>(y,x) == 255) {
-					circle(frame,Point(x,y),1,Scalar(255,0,0),2);
+					// circle(frame,Point(x,y),1,Scalar(255,0,0),2);
 				}
 			}
 		}
@@ -288,6 +286,7 @@ therefore recall = tpr
 */
 double calc_f1_score(vector<Rect> predictions,int truth_values[][4],int truth_length,double tpr){
 	double recall = tpr;
+	if(recall>1) recall = 1.0;
 	int true_positives = recall * truth_length;
 	double precision = (double)true_positives/(double)predictions.size();
 	printf("precision = %f\n",precision );
