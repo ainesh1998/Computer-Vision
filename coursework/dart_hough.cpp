@@ -71,7 +71,7 @@ int main( int argc, const char** argv )
 
 	showResults(frame, predictions, centres, line_intersections);
 
-	int ground_truth_vals[][4] = {{89,101,101,116},{583,126,60,88},{915,149,38,66}};
+	int ground_truth_vals[][4] = {{323,147,68,74}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
@@ -186,7 +186,7 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 		float circleRatio = innerCountCircles/(wholeCountCircles);
 		float lineRatio = innerCountLines/(wholeCountLines);
 		float actualRatio = (circleRatio + lineRatio)/2;
-		std::cout << actualRatio << '\n';
+		// std::cout << actualRatio << '\n';
 		if (actualRatio > CIRCLE_RECT_RATIO) predictions.push_back(dartboards[i]);
 	}
 
@@ -260,20 +260,17 @@ void drawTruth(Mat frame,int values[][4],int length){
 //given predictions and truth values calculate the true positive rate (no of correct faces/no of valid faces)
 double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_length){
 	int detected;
-	double iou_scores[predictions.size() * truth_length];
-	for(int i = 0; i < predictions.size();i++){
-		for(int j = 0; j < truth_length; j++){
+	for(int i = 0; i < truth_length;i++){
+		for(int j = 0; j <  predictions.size(); j++){
 			//compare each prediction with every truth value
 			//if they don't overlap IOU = 0
-			double iou = intersectionOverUnion(predictions[i],truth_values[j]);
-			iou_scores[truth_length * i + j] = iou;
+			double iou = intersectionOverUnion(predictions[j],truth_values[i]);
+			if(iou > IOU_THRESHOLD){
+				detected++;
+				break; // there should only be at most 1 prediction per truth value
+			}
 		}
 	}
-	//calculate no of detected faces
-	for(int i = 0; i < predictions.size() * truth_length; i++){
-		if(iou_scores[i] > IOU_THRESHOLD) detected++;
-	}
-	//detected = true positives
 	return (double)detected/(double)truth_length;
 }
 /*

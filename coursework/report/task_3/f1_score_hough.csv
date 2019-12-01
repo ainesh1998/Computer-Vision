@@ -5,8 +5,8 @@ RECT_CENTRE_THRESHOLD 0.38,CIRCLE_RECT_RATIO 0.09
 dart0.jpg, 1.00
 dart1.jpg, 1.00
 dart2.jpg, 1.00
-dart3.jpg, -nan
-dart4.jpg, -nan
+dart3.jpg, 1.00
+dart4.jpg, 0.00
 dart5.jpg, 1.00
 dart6.jpg, 1.00
 dart7.jpg, 1.00
@@ -15,8 +15,6 @@ dart9.jpg, 1.00
 dart10.jpg, 0.50
 dart11.jpg, 1.00
 dart12.jpg, 1.00
-dart13.jpg, -nan
+dart13.jpg, 0.00
 dart14.jpg, 1.00
 dart15.jpg, 1.00
-
-average excluding -nans = 12.17/16 = 0.76
