@@ -25,6 +25,7 @@ using namespace std;
 using namespace cv;
 
 /** Function Headers */
+void showResults(Mat &frame, vector<Rect> predictions, Mat &centres, Mat &line_intersections);
 vector<Rect> detectAndDisplay( Mat frame );
 //combine viola jones predictions with hough space predictions for stronger classifier
 vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartboards, Mat radii);
@@ -63,26 +64,12 @@ int main( int argc, const char** argv )
 
 	// 3. Detect Faces and Display Result
 	vector<Rect> dartboards = detectAndDisplay( frame );
-
 	vector<Rect> predictions = violaHough(centres,line_intersections,dartboards,radii);
 
 	std::cout << predictions.size() << std::endl;
-	for( int i = 0; i < predictions.size(); i++ )
-	{
-		for(int y = 0 ; y < centres.rows; y++){
-			for(int x = 0; x < centres.cols; x++){
-				if (centres.at<uchar>(y,x) == 255) {
-					circle(frame,Point(x,y),1,Scalar(255,110,199),2);
-				}
-				if (line_intersections.at<uchar>(y,x) == 255) {
-					circle(frame,Point(x,y),1,Scalar(255,0,0),2);
-				}
-			}
-		}
-		circle(frame, (predictions[i].tl()+predictions[i].br())*0.5, 0.5*(1-2*RECT_CENTRE_THRESHOLD)*predictions[i].height, Scalar(0,255,0),2);
-		circle(frame, (predictions[i].tl()+predictions[i].br())*0.5, 10, Scalar(0,255,0),2);
-		rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
-	}
+
+	showResults(frame, predictions, centres, line_intersections);
+
 	int ground_truth_vals[][4] = {{64,249,66,94},{840,215,121,126}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
@@ -94,6 +81,38 @@ int main( int argc, const char** argv )
 	imwrite( "detected.jpg", frame );
 
 	return 0;
+}
+
+void showResults(Mat &frame, vector<Rect> predictions, Mat &centres, Mat &line_intersections) {
+	for( int i = 0; i < predictions.size(); i++ )
+	{
+		for(int y = 0 ; y < centres.rows; y++){
+			for(int x = 0; x < centres.cols; x++){
+				if (centres.at<uchar>(y,x) == 255) {
+					circle(frame,Point(x,y),1,Scalar(255,110,199),2);
+				}
+			}
+		}
+		circle(frame, (predictions[i].tl()+predictions[i].br())*0.5, 0.5*(1-2*RECT_CENTRE_THRESHOLD)*predictions[i].height, Scalar(0,255,0),2);
+		circle(frame, (predictions[i].tl()+predictions[i].br())*0.5, 10, Scalar(0,255,0),2);
+		rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
+	}
+
+	for( int i = 0; i < predictions.size(); i++) {
+		for(int y = 0 ; y < centres.rows; y++){
+			for(int x = 0; x < centres.cols; x++){
+				if (line_intersections.at<uchar>(y,x) == 255) {
+					circle(frame,Point(x,y),1,Scalar(255,0,0),2);
+				}
+			}
+		}
+	}
+
+	for( int i = 0; i < predictions.size(); i++) {
+		circle(frame, (predictions[i].tl()+predictions[i].br())*0.5, 0.5*(1-2*RECT_CENTRE_THRESHOLD)*predictions[i].height, Scalar(0,255,0),2);
+		circle(frame, (predictions[i].tl()+predictions[i].br())*0.5, 10, Scalar(0,255,0),2);
+		rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
+	}
 }
 
 /** @function detectAndDisplay */
