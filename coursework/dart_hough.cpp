@@ -19,6 +19,7 @@
 #define IOU_THRESHOLD 0.3
 #define RECT_CENTRE_THRESHOLD 0.38
 #define CIRCLE_RECT_RATIO 0.09
+#define INTERSECT_POINT_RADIUS 15
 
 using namespace std;
 using namespace cv;
@@ -47,14 +48,15 @@ int main( int argc, const char** argv )
 
     // 1. Read Input Image
 	Mat frame = imread(argv[1], CV_LOAD_IMAGE_COLOR);
-	Mat sharpenedFrame = sharpen(frame, 2);
+	Mat sharpenedFrame = sharpen(frame,0);
+	equalizeHist(sharpenedFrame,sharpenedFrame);
 
 	Mat gray_image;
 	cvtColor(frame, gray_image, CV_BGR2GRAY);
 
 	Mat radii = houghCircle.circle_detect(gray_image);
 	Mat centres = imread("circle_space_thr.jpg",0);
-	Mat line_intersections = houghLine.line_detect(gray_image);
+	Mat line_intersections = houghLine.line_detect(sharpenedFrame);
 
 	// 2. Load the Strong Classifier in a structure called `Cascade'
 	if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
@@ -67,9 +69,21 @@ int main( int argc, const char** argv )
 	std::cout << predictions.size() << std::endl;
 	for( int i = 0; i < predictions.size(); i++ )
 	{
+		for(int y = 0 ; y < centres.rows; y++){
+			for(int x = 0; x < centres.cols; x++){
+				if (centres.at<uchar>(y,x) == 255) {
+					circle(frame,Point(x,y),1,Scalar(255,110,199),2);
+				}
+				if (line_intersections.at<uchar>(y,x) == 255) {
+					circle(frame,Point(x,y),1,Scalar(255,0,0),2);
+				}
+			}
+		}
+		circle(frame, (predictions[i].tl()+predictions[i].br())*0.5, 0.5*(1-2*RECT_CENTRE_THRESHOLD)*predictions[i].height, Scalar(0,255,0),2);
+		circle(frame, (predictions[i].tl()+predictions[i].br())*0.5, 10, Scalar(0,255,0),2);
 		rectangle(frame, Point(predictions[i].x, predictions[i].y), Point(predictions[i].x + predictions[i].width, predictions[i].y + predictions[i].height), Scalar( 0, 255, 0 ), 2);
 	}
-	int ground_truth_vals[][4] = {{152,53,133,145}};
+	int ground_truth_vals[][4] = {{64,249,66,94},{840,215,121,126}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
@@ -106,12 +120,13 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 		int innerCountCircles = 0;
 		int innerCountLines = 0;
 		Point centre = (dartboards[i].tl() + dartboards[i].br()) * 0.5;
-		int r = (1 - 2*RECT_CENTRE_THRESHOLD) * dartboards[i].height;
+		int r = (1 - 2*RECT_CENTRE_THRESHOLD) * dartboards[i].height/2;
+		int temp = RECT_CENTRE_THRESHOLD * dartboards[i].height;
 		float centreArea = M_PI*r*r;
 		float wholeArea = dartboards[i].height * dartboards[i].width;
 
-		for(int y = dartboards[i].y +RECT_CENTRE_THRESHOLD * dartboards[i].height; y < dartboards[i].y + (1-RECT_CENTRE_THRESHOLD)* dartboards[i].height; y++){
-			for(int x = dartboards[i].x + RECT_CENTRE_THRESHOLD * dartboards[i].width; x < dartboards[i].x + (1-RECT_CENTRE_THRESHOLD)*dartboards[i].width; x++){
+		for(int y = dartboards[i].y +temp; y < dartboards[i].y + dartboards[i].height-r; y++){
+			for(int x = dartboards[i].x + temp; x < dartboards[i].x + dartboards[i].width-r; x++){
 				// check for the circle inside the rect centre
 				int dist = (centre.x-x)*(centre.x-x) + (centre.y-y)*(centre.y-y);
 
@@ -119,6 +134,17 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 					if(centres.at<uchar>(y,x) == 255) {
 						innerCountCircles++;
 					}
+				}
+			}
+		}
+
+		temp = dartboards[i].height/2 - INTERSECT_POINT_RADIUS;
+		for(int y = dartboards[i].y +temp; y < dartboards[i].y + dartboards[i].height-r; y++){
+			for(int x = dartboards[i].x + temp; x < dartboards[i].x + dartboards[i].width-r; x++){
+				// check for the circle inside the rect centre
+				int dist = (centre.x-x)*(centre.x-x) + (centre.y-y)*(centre.y-y);
+
+				if(dist < r*r) {
 					if(line_intersections.at<uchar>(y,x) == 255) {
 						innerCountLines++;
 					}
@@ -128,7 +154,7 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 
 		float wholeCountCircles = 0.0;
 		float wholeCountLines = 0.0;
-		
+
 		for(int y = 0 ; y < centres.rows; y++){
 			for(int x = 0; x < centres.cols; x++){
 				if (centres.at<uchar>(y,x) == 255) {
@@ -143,6 +169,7 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 		float circleRatio = innerCountCircles/(wholeCountCircles);
 		float lineRatio = innerCountLines/(wholeCountLines);
 		float actualRatio = (circleRatio + lineRatio)/2;
+		std::cout << actualRatio << '\n';
 		if (actualRatio > CIRCLE_RECT_RATIO) predictions.push_back(dartboards[i]);
 	}
 
@@ -158,16 +185,16 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 			// intersection of predictions[i] and predictions[j], equal to the smaller rectangle if nested
 			int intersectionArea = (predictions[i] & predictions[j]).area();
 
-			if (intersectionArea == predictions[i].area() || intersectionArea == predictions[j].area()) {
-				Rect smallerOne = intersectionArea == predictions[i].area() ? predictions[i] : predictions[j];
-				Rect largerOne = intersectionArea == predictions[i].area() ? predictions[j] : predictions[i];
+			if (intersectionArea>0) {
+				// Rect smallerOne = intersectionArea == predictions[i].area() ? predictions[i] : predictions[j];
+				// Rect largerOne = intersectionArea == predictions[i].area() ? predictions[j] : predictions[i];
 
 				// get the difference between each radii and the average radii at that centre
-				int dist1 = abs(radii.at<float>(smallerOne.y + smallerOne.height/2, smallerOne.x + smallerOne.width/2) - smallerOne.width/2);
-				int dist2 = abs(radii.at<float>(largerOne.y + largerOne.height/2, largerOne.x + largerOne.width/2) - largerOne.width/2);
+				int dist1 = abs(radii.at<float>(predictions[i].y + predictions[i].height/2, predictions[i].x + predictions[i].width/2) - predictions[i].width/2);
+				int dist2 = abs(radii.at<float>(predictions[j].y + predictions[j].height/2, predictions[j].x + predictions[j].width/2) - predictions[j].width/2);
 
 				// the radius that is closer to the actual one is the better rectangle
-				Rect theOne = dist1 < dist2 ? smallerOne : largerOne;
+				Rect theOne = dist1 < dist2 ? predictions[i] : predictions[j];
 
 				// true if (predictions[i],predictions[j]) has already been seen
 				bool isSeen = false;
