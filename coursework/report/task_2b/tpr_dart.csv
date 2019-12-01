@@ -1,21 +1,18 @@
-IOU_THRESHOLD = 0.4
 
 File name,True Positive Rate
-dart0.jpg,2.00
-dart1.jpg,0.00
-dart2.jpg,0.00
+dart0.jpg,1.00
+dart1.jpg,1.00
+dart2.jpg,1.00
 dart3.jpg,1.00
-dart4.jpg,0.00
+dart4.jpg,1.00
 dart5.jpg,1.00
 dart6.jpg,1.00
 dart7.jpg,1.00
-dart8.jpg,0.00
+dart8.jpg,0.50
 dart9.jpg,1.00
-dart10.jpg,0.33
+dart10.jpg,0.67
 dart11.jpg,1.00
 dart12.jpg,1.00
 dart13.jpg,0.00
 dart14.jpg,1.00
-dart15.jpg,0.00
-
-average = 0.65
+dart15.jpg,1.00

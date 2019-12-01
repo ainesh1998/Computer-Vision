@@ -45,7 +45,7 @@ int main( int argc, const char** argv )
 	vector<Rect> predictions;
 	predictions = detectAndDisplay( frame );
 
-	int ground_truth_vals[][4] = {{440,9,159,187}};
+	int ground_truth_vals[][4] ={{152,53,133,145}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
@@ -98,7 +98,6 @@ void drawTruth(Mat frame,int values[][4],int length){
 //given predictions and truth values calculate the true positive rate (no of correct faces/no of valid faces)
 double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_length){
 	int detected;
-	double iou_scores[predictions.size() * truth_length];
 	for(int i = 0; i < truth_length;i++){
 		for(int j = 0; j <  predictions.size(); j++){
 			//compare each prediction with every truth value
@@ -108,14 +107,8 @@ double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_le
 				detected++;
 				break; // there should only be at most 1 prediction per truth value
 			}
-			// iou_scores[truth_length * i + j] = iou;
 		}
 	}
-	//calculate no of detected faces
-	// for(int i = 0; i < predictions.size() * truth_length; i++){
-	// 	if(iou_scores[i] > IOU_THRESHOLD) detected++;
-	// }
-	//detected = true positives
 	return (double)detected/(double)truth_length;
 }
 /*

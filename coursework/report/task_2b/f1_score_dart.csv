@@ -1,21 +1,18 @@
-IOU_THRESHOLD = 0.4
 
 File name, f1-score
-dart0.jpg, 0.24
-dart1.jpg, -nan
-dart2.jpg, -nan
+dart0.jpg, 0.12
+dart1.jpg, 0.33
+dart2.jpg, 0.29
 dart3.jpg, 0.18
-dart4.jpg, -nan
+dart4.jpg, 0.11
 dart5.jpg, 0.10
 dart6.jpg, 0.13
-dart7.jpg, 0.056
-dart8.jpg, -nan
-dart9.jpg, 1.00
-dart10.jpg, 0.028
+dart7.jpg, 0.06
+dart8.jpg, 0.05
+dart9.jpg, 0.20
+dart10.jpg, 0.06
 dart11.jpg, 0.33
 dart12.jpg, 0.33
-dart13.jpg, -nan
-dart14.jpg, 0.071
-dart15.jpg, -nan
-
-average = -nan ?
+dart13.jpg, 0.00
+dart14.jpg, 0.07
+dart15.jpg, 0.22
