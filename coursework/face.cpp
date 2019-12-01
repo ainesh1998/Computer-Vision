@@ -42,7 +42,7 @@ int main( int argc, const char** argv )
 	vector<Rect> predictions;
 	predictions = detectAndDisplay( frame );
 
-	int ground_truth_vals[][4] = {{112,163,145,150}};
+	int ground_truth_vals[][4] = {{345,103,140,160}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);

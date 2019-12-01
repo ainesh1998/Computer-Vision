@@ -1,4 +1,4 @@
-IOU_THRESHOLD = 0.5
+IOU_THRESHOLD = 0.4
 
 File name,True Positive Rate
 dart0.jpg,2.00

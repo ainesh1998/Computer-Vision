@@ -45,7 +45,7 @@ int main( int argc, const char** argv )
 	vector<Rect> predictions;
 	predictions = detectAndDisplay( frame );
 
-	int ground_truth_vals[][4] = {{323,147,68,74}};
+	int ground_truth_vals[][4] = {{440,9,159,187}};
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
@@ -99,18 +99,22 @@ void drawTruth(Mat frame,int values[][4],int length){
 double true_pos_rate(vector<Rect> predictions,int truth_values[][4],int truth_length){
 	int detected;
 	double iou_scores[predictions.size() * truth_length];
-	for(int i = 0; i < predictions.size();i++){
-		for(int j = 0; j < truth_length; j++){
+	for(int i = 0; i < truth_length;i++){
+		for(int j = 0; j <  predictions.size(); j++){
 			//compare each prediction with every truth value
 			//if they don't overlap IOU = 0
-			double iou = intersectionOverUnion(predictions[i],truth_values[j]);
-			iou_scores[truth_length * i + j] = iou;
+			double iou = intersectionOverUnion(predictions[j],truth_values[i]);
+			if(iou > IOU_THRESHOLD){
+				detected++;
+				break; // there should only be at most 1 prediction per truth value
+			}
+			// iou_scores[truth_length * i + j] = iou;
 		}
 	}
 	//calculate no of detected faces
-	for(int i = 0; i < predictions.size() * truth_length; i++){
-		if(iou_scores[i] > IOU_THRESHOLD) detected++;
-	}
+	// for(int i = 0; i < predictions.size() * truth_length; i++){
+	// 	if(iou_scores[i] > IOU_THRESHOLD) detected++;
+	// }
 	//detected = true positives
 	return (double)detected/(double)truth_length;
 }

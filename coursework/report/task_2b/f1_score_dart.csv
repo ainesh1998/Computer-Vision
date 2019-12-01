@@ -1,4 +1,4 @@
-IOU_THRESHOLD = 0.5
+IOU_THRESHOLD = 0.4
 
 File name, f1-score
 dart0.jpg, 0.24
