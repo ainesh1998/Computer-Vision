@@ -46,9 +46,9 @@ int main( int argc, const char** argv )
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
-	printf("true pos rate = %f \n",tpr );
+	// printf("true pos rate = %f \n",tpr );
 	double f1_score = calc_f1_score(predictions,ground_truth_vals,length,tpr);
-	printf("f1 score = %f \n",f1_score);
+	// printf("f1 score = %f \n",f1_score);
 	// 4. Save Result Image
 	imwrite( "detected.jpg", frame );
 	return 0;
@@ -117,7 +117,7 @@ double calc_f1_score(vector<Rect> predictions,int truth_values[][4],int truth_le
 	double recall = tpr;
 	int true_positives = recall * truth_length;
 	double precision = (double)true_positives/(double)predictions.size();
-	printf("precision = %f\n",precision );
+	// printf("precision = %f\n",precision );
 	double f1_score = 2 * (precision * recall)/(precision + recall);
 	return f1_score;
 }
