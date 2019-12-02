@@ -45,14 +45,6 @@ int main( int argc, const char** argv )
 	vector<Rect> predictions;
 	predictions = detectAndDisplay( frame );
 
-	int ground_truth_vals[][4] ={{152,53,133,145}};
-	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
-	drawTruth(frame,ground_truth_vals,length);
-	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
-	printf("true pos rate = %f \n",tpr );
-	double f1_score = calc_f1_score(predictions,ground_truth_vals,length,tpr);
-	printf("f1 score = %f \n",f1_score);
-
 	// 4. Save Result Image
 	imwrite( "detected.jpg", frame );
 

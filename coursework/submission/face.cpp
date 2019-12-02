@@ -13,7 +13,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <stdio.h>
-#define IOU_THRESHOLD 0.4
+#define IOU_THRESHOLD 0.5
 using namespace std;
 using namespace cv;
 
@@ -42,13 +42,6 @@ int main( int argc, const char** argv )
 	vector<Rect> predictions;
 	predictions = detectAndDisplay( frame );
 
-	int ground_truth_vals[][4] = {{345,103,140,160}};
-	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
-	drawTruth(frame,ground_truth_vals,length);
-	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
-	// printf("true pos rate = %f \n",tpr );
-	double f1_score = calc_f1_score(predictions,ground_truth_vals,length,tpr);
-	// printf("f1 score = %f \n",f1_score);
 	// 4. Save Result Image
 	imwrite( "detected.jpg", frame );
 	return 0;

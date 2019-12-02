@@ -42,7 +42,6 @@ Mat sharpen(Mat &image, int iterations);
 /** Global variables */
 String cascade_name = "dartcascade/cascade.xml";
 CascadeClassifier cascade;
-int ground_truth_vals[][4] = {{323,147,68,74}}; // Holds the ground truth rectangles for intended image
 
 /** @function main */
 int main( int argc, const char** argv )
@@ -74,13 +73,6 @@ int main( int argc, const char** argv )
 	// Show results on image
 	showResults(frame, predictions, centres, line_intersections);
 
-	// Evaluate performance
-	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
-	drawTruth(frame,ground_truth_vals,length);
-	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
-	// printf("true pos rate = %f \n",tpr );
-	double f1_score = calc_f1_score(predictions,ground_truth_vals,length,tpr);
-	// printf("f1 score = %f \n",f1_score);
 	// 4. Save Result Image
 	imwrite( "detected.jpg", frame );
 	return 0;
