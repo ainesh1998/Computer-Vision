@@ -26,10 +26,11 @@ using namespace std;
 using namespace cv;
 
 /** Function Headers */
+Mat getEllipseCentres(Mat &image);
 void showResults(Mat &frame, vector<Rect> predictions, Mat &centres, Mat &line_intersections);
 vector<Rect> detectAndDisplay( Mat frame );
 //combine viola jones predictions with hough space predictions for stronger classifier
-vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartboards, Mat radii);
+vector<Rect> violaHough(Mat centres, Mat line_intersections, Mat ellipseCentres, vector<Rect> dartboards, Mat radii);
 vector<Rect> removeIntersections(vector<Rect> predictions, Mat radii);
 bool compareRect(Rect rect1, Rect rect2);
 void drawTruth(Mat frame,int values[][4],int length);
@@ -42,7 +43,7 @@ Mat sharpen(Mat &image, int iterations);
 /** Global variables */
 String cascade_name = "dartcascade/cascade.xml";
 CascadeClassifier cascade;
-int ground_truth_vals[][4] = {{323,147,68,74}}; // Holds the ground truth rectangles for intended image
+int ground_truth_vals[][4] = {{89,101,101,116},{583,126,60,88},{915,149,38,66}};
 
 /** @function main */
 int main( int argc, const char** argv )
@@ -53,28 +54,31 @@ int main( int argc, const char** argv )
     // 1. Read Input Image
 	Mat frame = imread(argv[1], CV_LOAD_IMAGE_COLOR);
 
-	// convert image to grayscale
+	// sharpen
+	Mat sharpenedFrame = sharpen(frame,1);
+	equalizeHist(sharpenedFrame,sharpenedFrame);
+	// imwrite("equalized.jpg",sharpenedFrame);
+
 	Mat gray_image;
 	cvtColor(frame, gray_image, CV_BGR2GRAY);
 
-	// Perform hough transforms
+	// Hough transforms
 	Mat radii = houghCircle.circle_detect(gray_image);
 	Mat centres = imread("circle_space_thr.jpg",0);
-	Mat line_intersections = houghLine.line_detect(gray_image);
+	Mat line_intersections = houghLine.line_detect(sharpenedFrame);
+	Mat ellipseCentres = getEllipseCentres(gray_image);
 
 	// 2. Load the Strong Classifier in a structure called `Cascade'
 	if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
 
 	// 3. Detect Faces and Display Result
 	vector<Rect> dartboards = detectAndDisplay( frame );
-	vector<Rect> predictions = violaHough(centres,line_intersections,dartboards,radii);
+	vector<Rect> predictions = violaHough(centres,line_intersections,ellipseCentres,dartboards,radii);
 
 	std::cout << predictions.size() << std::endl;
 
-	// Show results on image
 	showResults(frame, predictions, centres, line_intersections);
 
-	// Evaluate performance
 	int length = sizeof(ground_truth_vals)/sizeof(ground_truth_vals[0]);
 	drawTruth(frame,ground_truth_vals,length);
 	double tpr = true_pos_rate(predictions,ground_truth_vals,length);
@@ -83,10 +87,43 @@ int main( int argc, const char** argv )
 	// printf("f1 score = %f \n",f1_score);
 	// 4. Save Result Image
 	imwrite( "detected.jpg", frame );
+
 	return 0;
 }
 
+// Get centre of ellipses by finding contours
+Mat getEllipseCentres(Mat &image) {
+	vector<vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+	Mat thr = imread("thr_circle.jpg",0);
+	findContours(thr, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+	// vector<RotatedRect> minRect( contours.size() );
+	vector<RotatedRect> minEllipse( contours.size() );
+
+	 for( int i = 0; i < contours.size(); i++ ) {
+		  if( contours[i].size() > 5 )
+			{ minEllipse[i] = fitEllipse( Mat(contours[i]) ); }
+		}
+
+	Mat centres = image;
+	Mat temp = image;
+	 for( int i = 0; i< contours.size(); i++ )
+		{
+		  // ellipse
+		  ellipse(temp, minEllipse[i], Scalar(255,0,0), 2, 8 );
+		  Point centre = minEllipse[i].center;
+		  if (centre.x >= 0 && centre.y >= 0 && centre.x < image.cols && centre.y < image.rows) {
+			  temp.at<uchar>(centre.y, centre.x) = 255;
+			  centres.at<uchar>(centre.y, centre.x) = 255;
+		  }
+		}
+	imwrite("contours.jpg",temp);
+	return centres;
+}
+
 void showResults(Mat &frame, vector<Rect> predictions, Mat &centres, Mat &line_intersections) {
+
 	for( int i = 0; i < predictions.size(); i++) {
 		circle(frame, (predictions[i].tl()+predictions[i].br())*0.5, 0.5*(1-2*RECT_CENTRE_THRESHOLD)*predictions[i].height, Scalar(0,255,0),2);
 		circle(frame, (predictions[i].tl()+predictions[i].br())*0.5, 10, Scalar(0,255,0),2);
@@ -110,21 +147,21 @@ vector<Rect> detectAndDisplay( Mat frame )
 	return faces;
 }
 
-// COMBINED DETECTOR
-vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartboards, Mat radii){
+vector<Rect> violaHough(Mat centres, Mat line_intersections, Mat ellipseCentres, vector<Rect> dartboards, Mat radii){
 	vector<Rect> predictions;
 	vector<float> ratios;
 
 	for(int i = 0; i < dartboards.size(); i++){
-		float wholeCountCircles = 0.0; // Total number of predicted circle centres in image
-		float wholeCountLines = 0.0; // Total number of predicted line intersections in the image
-		int innerCountCircles = 0; // Number of predicted circle centres in the centre of the dartboard rectangle
-		int innerCountLines = 0; // Number of predicted line intersections in the centre of the dartboard rectangle
-		Point centre = (dartboards[i].tl() + dartboards[i].br()) * 0.5; // dartboard centre
-		int r = (1 - 2*RECT_CENTRE_THRESHOLD) * dartboards[i].height/2; // distance between top of rectangle and Hough line intersection centre
+		float wholeCountCircles = 0.0;
+		float wholeCountLines = 0.0;
+		int innerCountCircles = 0;
+		int innerCountLines = 0;
+		Point centre = (dartboards[i].tl() + dartboards[i].br()) * 0.5;
+		int r = (1 - 2*RECT_CENTRE_THRESHOLD) * dartboards[i].height/2;
 		int distToCircleCentre = RECT_CENTRE_THRESHOLD * dartboards[i].height;
+		bool isEllipse = false;
 
-		// get count in predicted Hough circle centre
+		// get count in circle centre
 		for(int y = dartboards[i].y +distToCircleCentre; y < dartboards[i].y + dartboards[i].height-r; y++){
 			for(int x = dartboards[i].x + distToCircleCentre; x < dartboards[i].x + dartboards[i].width-r; x++){
 				// check for the circle inside the rect centre
@@ -138,7 +175,7 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 			}
 		}
 
-		// get count in predicted Hough line intersection centre
+		// get count in line centre
 		int distToLineCentre = dartboards[i].height/2 - INTERSECT_POINT_RADIUS;
 		for(int y = dartboards[i].y +distToLineCentre; y < dartboards[i].y + dartboards[i].height-r; y++){
 			for(int x = dartboards[i].x + distToLineCentre; x < dartboards[i].x + dartboards[i].width-r; x++){
@@ -150,10 +187,15 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 						innerCountLines++;
 					}
 				}
+				if (ellipseCentres.at<uchar>(y,x) == 255) {
+					if (!isEllipse) {
+						isEllipse = true;
+					}
+				}
 			}
 		}
 
-		// total Hough predictions in the entire image
+		// total count
 		for(int y = 0 ; y < centres.rows; y++){
 			for(int x = 0; x < centres.cols; x++){
 				if (centres.at<uchar>(y,x) == 255) {
@@ -167,11 +209,11 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 
 		float circleRatio = innerCountCircles/(wholeCountCircles);
 		float lineRatio = innerCountLines/(wholeCountLines);
-		float actualRatio = (circleRatio + lineRatio)/2;
+		float actualRatio = (isEllipse) ? (circleRatio + lineRatio) :(circleRatio + lineRatio)/2 ;
 		ratios.push_back(actualRatio);
 	}
 
-	// NORMALIZE RATIOS
+	// normalize
 	float maxVal = 0;
 	for (int i = 0; i < ratios.size(); i++) {
 		if(ratios[i] > maxVal) maxVal = ratios[i];
@@ -185,7 +227,6 @@ vector<Rect> violaHough(Mat centres, Mat line_intersections, vector<Rect> dartbo
 	vector<Rect> final = removeIntersections(predictions, radii);
 	return final;
 }
-
 
 vector<Rect> removeIntersections(vector<Rect> predictions, Mat radii) {
 	vector<Rect> final;
